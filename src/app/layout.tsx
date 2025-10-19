@@ -1,12 +1,20 @@
 import "./globals.css";
-import type { ReactNode } from "react";
 import { Providers } from "./providers";
+import Navbar from "@/components/Navbar";
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export const metadata = {
+  title: "Lotto App",
+  description: "Your lucky draw platform",
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>
-        <Providers>{children}</Providers>
+      <body className="bg-[#0a0a0a] text-white">
+        <Providers>
+          <Navbar />
+          {children}
+        </Providers>
       </body>
     </html>
   );

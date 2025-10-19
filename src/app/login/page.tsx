@@ -1,15 +1,22 @@
 "use client";
 
-import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { useState, useEffect } from "react";
+import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import AuthLayout from "@/components/AuthLayout";
 
 export default function LoginPage() {
+  const { data: session, status } = useSession();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.replace("/");
+    }
+  }, [status, session, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,6 +31,8 @@ export default function LoginPage() {
     if (res?.error) setError("Invalid email or password");
     else router.push("/");
   };
+
+  if (status === "loading") return null;
 
   return (
     <AuthLayout
