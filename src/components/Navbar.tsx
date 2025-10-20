@@ -19,6 +19,7 @@ export default function Navbar() {
             width={40}
             height={40}
             className="rounded"
+            priority
           />
           <span className="text-2xl font-bold text-yellow-400">Lotto</span>
         </Link>

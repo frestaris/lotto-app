@@ -4,8 +4,17 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { PrismaClient } from "@prisma/client";
 import { compare } from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 const prisma = new PrismaClient();
+
+interface AuthUser {
+  id?: string;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+  accessToken?: string;
+}
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -38,12 +47,20 @@ export const authOptions: NextAuthOptions = {
         const isValid = await compare(credentials.password, user.password);
         if (!isValid) throw new Error("Invalid password");
 
-        // Return a plain object — not Prisma model — to satisfy NextAuth typing
+        // ✅ Generate our own access token (1h expiry)
+        const accessToken = jwt.sign(
+          { userId: user.id, email: user.email },
+          process.env.NEXTAUTH_SECRET!, // reuse your NextAuth secret
+          { expiresIn: "1h" }
+        );
+
+        // ✅ Return a plain object (NextAuth expects this)
         return {
           id: user.id,
           name: user.name,
           email: user.email,
           image: user.image,
+          accessToken, // 👈 add our token
         };
       },
     }),
@@ -58,27 +75,31 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user, account }) {
       // Attach user info on login
-      if (user) token.user = user;
+      if (user) token.user = user as AuthUser;
 
-      // Add access_token if using OAuth (Google)
+      // Add Google access token
       if (account?.access_token) {
         token.accessToken = account.access_token;
       }
+
+      // Add custom JWT from credentials login
+      if (user && (user as AuthUser).accessToken) {
+        token.accessToken = (user as AuthUser).accessToken;
+      }
+
       return token;
     },
 
-  async session({ session, token }) {
-  if (token?.user) {
-    session.user = {
-      ...session.user,
-      ...token.user,
-      accessToken: token.accessToken as string | undefined,
-    };
-  }
-  return session;
-},
-
-
+    async session({ session, token }) {
+      if (token?.user) {
+        session.user = {
+          ...session.user,
+          ...(token.user as AuthUser),
+          accessToken: token.accessToken as string | undefined,
+        };
+      }
+      return session;
+    },
   },
 
   // ✅ Optional custom sign-in page
