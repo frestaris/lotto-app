@@ -2,41 +2,41 @@ generator client {
   provider = "prisma-client-js"
 }
 
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
+// User models
+
 model User {
-  id             String   @id @default(cuid())
-  name           String?
-  email          String?  @unique
-  emailVerified  DateTime?
-  image          String?
-  password       String? 
-  createdAt      DateTime @default(now())
-updatedAt DateTime @default(now()) @updatedAt
-  accounts       Account[]
-  sessions       Session[]
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @default(now()) @updatedAt
+  accounts      Account[]
+  sessions      Session[]
+  tickets       Ticket[]
 }
 
-
-
 model Account {
-  id                 String  @id @default(cuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String? 
-  access_token       String? 
-  expires_at         Int? 
-  token_type         String?
-  scope              String?
-  id_token           String?
-  session_state      String?
-  user               User    @relation(fields: [userId], references: [id])
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id])
 
   @@unique([provider, providerAccountId])
 }
@@ -55,4 +55,71 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+// Lotto Game Models
+
+model Game {
+  id               String   @id @default(cuid())
+  slug             String   @unique
+  name             String
+  description      String?
+  logoUrl          String?
+  priceCents       Int      @default(200) // e.g., $2.00
+  mainPickCount    Int // how many numbers user picks (e.g., 6)
+  mainRangeMin     Int      @default(1)
+  mainRangeMax     Int // range maximum (e.g., 60)
+  specialPickCount Int      @default(0)
+  specialRangeMin  Int?
+  specialRangeMax  Int?
+  drawFrequency    String? // e.g., "Thursday" or "Tue & Thu"
+  jackpotCurrency  String   @default("AUD")
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  draws   Draw[]
+  tickets Ticket[]
+  prizes  PrizeTier[]
+}
+
+model Draw {
+  id                    String   @id @default(cuid())
+  gameId                String
+  game                  Game     @relation(fields: [gameId], references: [id])
+  drawNumber            Int
+  drawDate              DateTime
+  winningMainNumbers    Int[]
+  winningSpecialNumbers Int[]
+  jackpotAmountCents    Int?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  tickets Ticket[]
+}
+
+model Ticket {
+  id             String   @id @default(cuid())
+  userId         String
+  gameId         String
+  drawId         String
+  numbers        Int[]
+  specialNumbers Int[]
+  priceCents     Int
+  isWinner       Boolean  @default(false)
+  payoutCents    Int?
+  createdAt      DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+  game Game @relation(fields: [gameId], references: [id])
+  draw Draw @relation(fields: [drawId], references: [id])
+}
+
+model PrizeTier {
+  id           String @id @default(cuid())
+  gameId       String
+  game         Game   @relation(fields: [gameId], references: [id])
+  matchMain    Int
+  matchSpecial Int
+  payoutCents  Int
 }
