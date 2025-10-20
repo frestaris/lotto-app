@@ -1,14 +1,17 @@
 "use client";
 
 import { configureStore } from "@reduxjs/toolkit";
-import cartReducer from "./slices/cartSlice";
 import { useDispatch, useSelector, TypedUseSelectorHook } from "react-redux";
-
+import cartReducer from "./slices/cartSlice";
+import { gameApi } from "./slices/gameApi";
 export const makeStore = () =>
   configureStore({
     reducer: {
       cart: cartReducer,
+      [gameApi.reducerPath]: gameApi.reducer,
     },
+    middleware: (getDefaultMiddleware) =>
+      getDefaultMiddleware().concat(gameApi.middleware),
     devTools: process.env.NODE_ENV !== "production",
   });
 
