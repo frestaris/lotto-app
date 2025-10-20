@@ -43,7 +43,7 @@ export default function Navbar() {
             <div className="relative">
               <button
                 onClick={() => setOpen((p) => !p)}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 hover:cursor-pointer"
               >
                 {session.user?.image ? (
                   <Image
@@ -63,19 +63,20 @@ export default function Navbar() {
               {open && (
                 <div className="absolute right-0 mt-3 w-48 bg-[#1e1e1e] rounded-xl border border-white/10 shadow-lg overflow-hidden">
                   <Link
+                    href="/dashboard"
+                    className="flex items-center gap-2 px-4 py-2 hover:bg-white/10 text-gray-200"
+                    onClick={() => setOpen(false)}
+                  >
+                    <User className="w-4 h-4 text-yellow-400" /> Profile
+                  </Link>
+                  <Link
                     href="/tickets"
                     className="flex items-center gap-2 px-4 py-2 hover:bg-white/10 text-gray-200"
                     onClick={() => setOpen(false)}
                   >
                     <Ticket className="w-4 h-4 text-yellow-400" /> My Tickets
                   </Link>
-                  <Link
-                    href="/profile"
-                    className="flex items-center gap-2 px-4 py-2 hover:bg-white/10 text-gray-200"
-                    onClick={() => setOpen(false)}
-                  >
-                    <User className="w-4 h-4 text-yellow-400" /> Profile
-                  </Link>
+
                   <Link
                     href="/settings"
                     className="flex items-center gap-2 px-4 py-2 hover:bg-white/10 text-gray-200"
@@ -88,7 +89,7 @@ export default function Navbar() {
                       signOut();
                       setOpen(false);
                     }}
-                    className="flex items-center gap-2 w-full text-left px-4 py-2 hover:bg-red-600 text-red-400 hover:text-white transition-all"
+                    className="flex items-center gap-2 w-full text-left px-4 py-2 hover:bg-red-600 text-red-400 hover:text-white transition-all hover:cursor-pointer"
                   >
                     <LogOut className="w-4 h-4" /> Logout
                   </button>
