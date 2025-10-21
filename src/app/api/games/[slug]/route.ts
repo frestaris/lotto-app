@@ -8,15 +8,14 @@ const prisma = new PrismaClient();
  * Returns a single game by its slug
  */
 export async function GET(
-  request: Request,
-  { params }: { params: { slug: string } }
+  req: Request,
+  context: { params: Promise<{ slug: string }> }
 ) {
-  const { slug } = params;
-
+  const { slug } = await context.params;
   try {
     const game = await prisma.game.findUnique({
       where: { slug },
-      include: { prizes: true }, // optional: include prize tiers
+      include: { prizes: true },
     });
 
     if (!game) {

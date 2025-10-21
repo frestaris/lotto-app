@@ -10,7 +10,7 @@ async function main() {
       slug: "powerball",
       name: "Powerball",
       description:
-        "Pick 5 numbers (1–69) and 1 Powerball (1–26). Draw every Thursday at 8 PM.",
+        "Pick 5 numbers (1–69) and 1 Powerball (1–10). Draw every Thursday at 8 PM.",
       logoUrl: "/images/powerball.png",
       priceCents: 300,
       mainPickCount: 5,
@@ -18,7 +18,7 @@ async function main() {
       mainRangeMax: 69,
       specialPickCount: 1,
       specialRangeMin: 1,
-      specialRangeMax: 26,
+      specialRangeMax: 10,
       drawFrequency: "Thursday 8 PM",
     },
   });
