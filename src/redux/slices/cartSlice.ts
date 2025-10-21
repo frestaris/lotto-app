@@ -1,40 +1,38 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-export interface CartItem {
+export interface TicketItem {
   id: string;
-  name: string;
-  price: number;
-  quantity: number;
+  gameId: string;
+  gameName: string;
+  numbers: number[];
+  specialNumbers: number[];
+  priceCents: number;
 }
 
 interface CartState {
-  items: CartItem[];
+  tickets: TicketItem[];
 }
 
 const initialState: CartState = {
-  items: [],
+  tickets: [],
 };
 
 const cartSlice = createSlice({
   name: "cart",
   initialState,
   reducers: {
-    addItem: (state, action: PayloadAction<CartItem>) => {
-      const existing = state.items.find((i) => i.id === action.payload.id);
-      if (existing) {
-        existing.quantity += action.payload.quantity;
-      } else {
-        state.items.push(action.payload);
-      }
+    addTicket: (state, action: PayloadAction<TicketItem>) => {
+      if (state.tickets.length >= 50) return;
+      state.tickets.push(action.payload);
     },
-    removeItem: (state, action: PayloadAction<string>) => {
-      state.items = state.items.filter((i) => i.id !== action.payload);
+    removeTicket: (state, action: PayloadAction<string>) => {
+      state.tickets = state.tickets.filter((t) => t.id !== action.payload);
     },
     clearCart: (state) => {
-      state.items = [];
+      state.tickets = [];
     },
   },
 });
 
-export const { addItem, removeItem, clearCart } = cartSlice.actions;
+export const { addTicket, removeTicket, clearCart } = cartSlice.actions;
 export default cartSlice.reducer;

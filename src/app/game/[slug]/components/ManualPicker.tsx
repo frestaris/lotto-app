@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import { Check } from "lucide-react";
-import { Game } from "@prisma/client";
+import type { Game } from "@/types/game";
+import { useAppDispatch } from "@/redux/store";
+import { addTicket } from "@/redux/slices/cartSlice";
+import { v4 as uuidv4 } from "uuid";
 
 interface ManualPickerProps {
   game: Game;
@@ -11,6 +14,8 @@ interface ManualPickerProps {
 export default function ManualPicker({ game }: ManualPickerProps) {
   const [selectedMain, setSelectedMain] = useState<number[]>([]);
   const [selectedSpecial, setSelectedSpecial] = useState<number[]>([]);
+  const [confirmation, setConfirmation] = useState(false);
+  const dispatch = useAppDispatch();
 
   const toggleNumber = (num: number, type: "main" | "special") => {
     if (type === "main") {
@@ -33,13 +38,20 @@ export default function ManualPicker({ game }: ManualPickerProps) {
   };
 
   const handleConfirm = () => {
-    alert(
-      `✅ Your ticket:\nMain: ${selectedMain.join(", ")}${
-        selectedSpecial.length
-          ? ` | Special: ${selectedSpecial.join(", ")}`
-          : ""
-      }`
-    );
+    const ticket = {
+      id: uuidv4(),
+      gameId: game.id,
+      gameName: game.name,
+      numbers: selectedMain,
+      specialNumbers: selectedSpecial,
+      priceCents: game.priceCents,
+    };
+
+    dispatch(addTicket(ticket));
+    setConfirmation(true);
+
+    // Reset message after a few seconds
+    setTimeout(() => setConfirmation(false), 2500);
   };
 
   return (
@@ -97,7 +109,7 @@ export default function ManualPicker({ game }: ManualPickerProps) {
         </>
       )}
 
-      <div className="mt-10">
+      <div className="mt-10 space-y-3">
         <button
           disabled={
             selectedMain.length < game.mainPickCount ||
@@ -110,6 +122,12 @@ export default function ManualPicker({ game }: ManualPickerProps) {
           <Check className="w-5 h-5" />
           Confirm Selection
         </button>
+
+        {confirmation && (
+          <p className="text-green-400 font-semibold animate-pulse">
+            🎟️ Ticket added to cart!
+          </p>
+        )}
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import { Dice5, Hand } from "lucide-react";
-import { Game } from "@prisma/client";
+import type { Game } from "@/types/game";
 
 interface PlayOptionsProps {
   game: Game;

@@ -1,4 +1,5 @@
 "use client";
+
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useGetGameBySlugQuery } from "@/redux/slices/gameApi";
@@ -47,6 +48,11 @@ export default function GameDetailsPage() {
       ) : (
         autoMainNumbers.length > 0 && (
           <AutoPickResult
+            game={{
+              id: game.id,
+              name: game.name,
+              priceCents: game.priceCents,
+            }}
             mainNumbers={autoMainNumbers}
             specialNumbers={autoSpecialNumbers}
           />

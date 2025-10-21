@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { Game } from "@prisma/client";
+import type { Game } from "@/types/game";
 
 interface GameHeaderProps {
   game: Game;
