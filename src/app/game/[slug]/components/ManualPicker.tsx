@@ -52,24 +52,74 @@ export default function ManualPicker({ game }: { game: Game }) {
 
   // Fast select numbers for all games
   const fastSelect = () => {
-    const updated = Array.from({ length: selectedNumbers.length }, () => {
-      const nums: number[] = [];
-      while (nums.length < game.mainPickCount) {
-        const rand =
-          Math.floor(
-            Math.random() * (game.mainRangeMax - game.mainRangeMin + 1)
-          ) + game.mainRangeMin;
-        if (!nums.includes(rand)) nums.push(rand);
+    try {
+      // ---- MAIN NUMBERS ----
+      const updatedMain = selectedNumbers.map((nums) => {
+        // Normalize length with null placeholders
+        const filled: (number | null)[] = Array.from(
+          { length: game.mainPickCount },
+          (_, i) => nums[i] ?? null
+        );
+
+        const min = game.mainRangeMin;
+        const max = game.mainRangeMax;
+
+        // Skip fully filled games
+        const emptyCount = filled.filter((n) => n === null).length;
+        if (emptyCount === 0) return filled;
+
+        const picked = new Set(filled.filter((n) => n !== null) as number[]);
+
+        // Only fill the empty slots
+        while (filled.some((n) => n === null)) {
+          const rand = Math.floor(Math.random() * (max - min + 1)) + min;
+          if (!picked.has(rand)) {
+            const emptyIndex = filled.findIndex((n) => n === null);
+            if (emptyIndex === -1) break; // safety
+            filled[emptyIndex] = rand;
+            picked.add(rand);
+          }
+        }
+
+        // Sort only actual numbers; keep nulls at the end
+        return filled
+          .slice()
+          .sort((a, b) => (a === null ? 1 : b === null ? -1 : a - b));
+      });
+
+      setSelectedNumbers(updatedMain);
+
+      // ---- SPECIAL NUMBERS ----
+      if (game.specialPickCount > 0) {
+        setSelectedSpecialNumbers((prev) => {
+          const next = Array.from(
+            { length: updatedMain.length },
+            (_, i) => prev[i] ?? null
+          );
+          const sMin = game.specialRangeMin ?? 1;
+          const sMax = game.specialRangeMax ?? 10;
+
+          for (let i = 0; i < next.length; i++) {
+            // Only fill missing specials
+            if (next[i] == null) {
+              next[i] = Math.floor(Math.random() * (sMax - sMin + 1)) + sMin;
+            }
+          }
+          return next;
+        });
       }
-      return nums.sort((a, b) => a - b);
-    });
-    setSelectedNumbers(updated);
+    } catch (err) {
+      console.error("fastSelect crashed", { err, selectedNumbers, game });
+    }
   };
 
   // Clear all
   const clearAll = () => {
     setSelectedNumbers(
       Array.from({ length: selectedNumbers.length }, () => [])
+    );
+    setSelectedSpecialNumbers(
+      Array.from({ length: selectedSpecialNumbers.length }, () => null)
     );
   };
 
@@ -80,14 +130,25 @@ export default function ManualPicker({ game }: { game: Game }) {
       updated[index] = [];
       return updated;
     });
+
+    setSelectedSpecialNumbers((prev) => {
+      const updated = [...prev];
+      updated[index] = null;
+      return updated;
+    });
   };
 
   // Remove game entirely
   const removeGame = (index: number) => {
-    if (selectedNumbers.length <= 1) return; // except the last one
+    if (selectedNumbers.length <= 1) return;
 
     const updatedGames = selectedNumbers.filter((_, i) => i !== index);
+    const updatedSpecials = selectedSpecialNumbers.filter(
+      (_, i) => i !== index
+    );
+
     setSelectedNumbers(updatedGames);
+    setSelectedSpecialNumbers(updatedSpecials);
     setGamesCount(updatedGames.length);
 
     // adjust open index
@@ -98,20 +159,33 @@ export default function ManualPicker({ game }: { game: Game }) {
 
   // Handle game count dropdown changes
   const handleGamesCountChange = (value: number) => {
-    // If reducing games, slice off extras
-    if (value < selectedNumbers.length) {
-      setSelectedNumbers((prev) => prev.slice(0, value));
-    } else if (value > selectedNumbers.length) {
-      // If increasing games, add empty arrays
-      const diff = value - selectedNumbers.length;
-      setSelectedNumbers((prev) => [
-        ...prev,
-        ...Array.from({ length: diff }, () => []),
-      ]);
-    }
+    // Main numbers
+    setSelectedNumbers((prev) => {
+      if (value < prev.length) return prev.slice(0, value);
+      if (value > prev.length) {
+        const diff = value - prev.length;
+        return [
+          ...prev,
+          ...Array.from({ length: diff }, () =>
+            Array(game.mainPickCount).fill(null)
+          ),
+        ];
+      }
+      return prev;
+    });
+
+    // Specials
+    setSelectedSpecialNumbers((prev) => {
+      if (value < prev.length) return prev.slice(0, value);
+      if (value > prev.length) {
+        const diff = value - prev.length;
+        return [...prev, ...Array(diff).fill(null)];
+      }
+      return prev;
+    });
+
     setGamesCount(value);
 
-    // Make sure the open game index remains valid
     if (openGameIndex !== null && openGameIndex >= value) {
       setOpenGameIndex(value - 1);
     }
