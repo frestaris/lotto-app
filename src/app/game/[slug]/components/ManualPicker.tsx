@@ -1,7 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles, Trash2, XCircle } from "lucide-react";
+import { Sparkles, Trash2, XCircle, ShoppingCart } from "lucide-react";
+import { useAppDispatch } from "@/redux/store";
+import { addTicket } from "@/redux/slices/cartSlice";
+import { v4 as uuidv4 } from "uuid";
+
 import type { Game } from "@/types/game";
 
 export default function ManualPicker({ game }: { game: Game }) {
@@ -14,6 +18,7 @@ export default function ManualPicker({ game }: { game: Game }) {
   >(Array.from({ length: gamesCount }, () => null));
 
   const [openGameIndex, setOpenGameIndex] = useState<number | null>(0);
+  const dispatch = useAppDispatch();
 
   // Toggle a number
   const toggleNumber = (gameIndex: number, num: number) => {
@@ -188,6 +193,48 @@ export default function ManualPicker({ game }: { game: Game }) {
 
     if (openGameIndex !== null && openGameIndex >= value) {
       setOpenGameIndex(value - 1);
+    }
+  };
+
+  // Handle Add to Cart
+  const handleAddToCart = () => {
+    let addedCount = 0;
+
+    selectedNumbers.forEach((nums, i) => {
+      const mainNumbers = nums.filter((n): n is number => n !== null);
+      const specialNumber = selectedSpecialNumbers[i];
+
+      const isMainFilled = mainNumbers.length === game.mainPickCount;
+      const isSpecialFilled =
+        game.specialPickCount === 0 || specialNumber !== null;
+
+      if (isMainFilled && isSpecialFilled) {
+        const ticket = {
+          id: uuidv4(),
+          gameId: game.id,
+          gameName: game.name,
+          numbers: mainNumbers,
+          specialNumbers: specialNumber ? [specialNumber] : [],
+          priceCents: game.priceCents,
+        };
+
+        dispatch(addTicket(ticket));
+        addedCount++;
+      }
+    });
+
+    if (addedCount > 0) {
+      console.log(`🎟️ ${addedCount} game(s) added to cart!`);
+
+      // 🧹 Clear everything after successful add
+      setSelectedNumbers(
+        Array.from({ length: gamesCount }, () =>
+          Array(game.mainPickCount).fill(null)
+        )
+      );
+      setSelectedSpecialNumbers(Array.from({ length: gamesCount }, () => null));
+    } else {
+      console.log("⚠️ No complete games to add!");
     }
   };
 
@@ -402,6 +449,62 @@ export default function ManualPicker({ game }: { game: Game }) {
           })}
         </div>
       </div>
+      {/* 🧾 Sticky Footer */}
+      {selectedNumbers.some((nums) => nums.filter(Boolean).length > 0) && (
+        <div className="sticky bottom-0 left-0 w-full bg-black/80 backdrop-blur-md border-t border-white/10 z-50">
+          <div className="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-center px-6 py-4 gap-4">
+            {/* Amount summary */}
+            <div className="flex items-center gap-3">
+              <span className="text-gray-300 text-sm sm:text-base">
+                Total Games:{" "}
+                <span className="text-yellow-400 font-semibold">
+                  {
+                    selectedNumbers.filter((nums, i) => {
+                      const mainFilled =
+                        nums.filter((n) => n !== null).length ===
+                        game.mainPickCount;
+                      const specialFilled =
+                        game.specialPickCount > 0
+                          ? selectedSpecialNumbers[i] !== null
+                          : true;
+                      return mainFilled && specialFilled;
+                    }).length
+                  }
+                </span>
+              </span>
+
+              <span className="text-gray-300 text-sm sm:text-base">
+                Total Price:{" "}
+                <span className="text-yellow-400 font-semibold">
+                  $
+                  {(
+                    selectedNumbers.filter((nums, i) => {
+                      const mainFilled =
+                        nums.filter((n) => n !== null).length ===
+                        game.mainPickCount;
+                      const specialFilled =
+                        game.specialPickCount > 0
+                          ? selectedSpecialNumbers[i] !== null
+                          : true;
+                      return mainFilled && specialFilled;
+                    }).length *
+                    (game.priceCents / 100)
+                  ).toFixed(2)}
+                </span>
+              </span>
+            </div>
+
+            {/* Add to Cart Button */}
+            <button
+              onClick={handleAddToCart}
+              className="flex items-center justify-center gap-2 bg-green-500 text-black font-semibold px-6 py-3 rounded-lg hover:bg-green-400 cursor-pointer transition w-full sm:w-auto"
+            >
+              <ShoppingCart />
+              Add to Cart
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
