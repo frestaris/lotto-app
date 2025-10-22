@@ -6,15 +6,17 @@ import { useAppDispatch } from "@/redux/store";
 import { addTicket } from "@/redux/slices/cartSlice";
 import { v4 as uuidv4 } from "uuid";
 import type { Game } from "@/types/game";
-import ManualPicker from "./ManualPicker";
+import ManualPicker from "./create-your-own/ManualPicker";
+import { Toaster } from "@/hooks/Toaster";
 
 interface PlayOptionsProps {
   game: Game;
 }
 
 export default function PlayOptions({ game }: PlayOptionsProps) {
-  const [mode, setMode] = useState<"quick" | "custom">("quick"); // toggle between Quick Play and Create Your Own
+  const [mode, setMode] = useState<"quick" | "custom">("quick");
   const dispatch = useAppDispatch();
+  const { showToast, Toast } = Toaster();
 
   // Generate random lotto numbers
   const generateRandomNumbers = (count: number, min: number, max: number) => {
@@ -63,15 +65,16 @@ export default function PlayOptions({ game }: PlayOptionsProps) {
         })
       );
     }
+    showToast(`🎟️ ${entries} entries added to your cart`);
   };
 
   return (
     <div className="max-w-4xl mx-auto mt-12 text-center">
       {/* Toggle Buttons */}
-      <div className="flex justify-center gap-6 flex-wrap mb-10">
+      <div className="flex justify-center gap-6 flex-wrap mb-10 ">
         <button
           onClick={() => setMode("quick")}
-          className={`flex items-center gap-2 px-8 py-4 rounded-lg font-semibold text-lg transition ${
+          className={`flex items-center gap-2 px-8 py-4 rounded-lg font-semibold text-lg transition cursor-pointer ${
             mode === "quick"
               ? "bg-gradient-to-r from-yellow-400 to-amber-500 text-black"
               : "border border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black"
@@ -82,7 +85,7 @@ export default function PlayOptions({ game }: PlayOptionsProps) {
         </button>
         <button
           onClick={() => setMode("custom")}
-          className={`flex items-center gap-2 px-8 py-4 rounded-lg font-semibold text-lg transition ${
+          className={`flex items-center gap-2 px-8 py-4 rounded-lg font-semibold text-lg transition cursor-pointer ${
             mode === "custom"
               ? "bg-gradient-to-r from-yellow-400 to-amber-500 text-black"
               : "border border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black"
@@ -96,15 +99,18 @@ export default function PlayOptions({ game }: PlayOptionsProps) {
       {/* QUICK PLAY MODE */}
       {mode === "quick" && (
         <div>
-          <h3 className="text-2xl font-semibold mb-8 text-yellow-400">
+          <h3 className="text-2xl font-semibold text-yellow-400">
             Choose your Quick Play package
-          </h3>
+          </h3>{" "}
+          <p className="text-gray-400 text-sm my-4">
+            Each package automatically generates random entries for you.
+          </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 justify-center">
             {quickPlays.map((pack) => (
               <button
                 key={pack.label}
                 onClick={() => handleQuickPlay(pack.entries)}
-                className="bg-white/10 hover:bg-yellow-400/20 border border-white/10 rounded-xl py-5 px-3 transition flex flex-col items-center space-y-1"
+                className="bg-white/10 hover:bg-yellow-400/20 border border-white/10 rounded-xl py-5 px-3 transition flex flex-col items-center space-y-1 cursor-pointer"
               >
                 <span className="text-yellow-400 font-bold text-lg">
                   {pack.label}
@@ -118,9 +124,6 @@ export default function PlayOptions({ game }: PlayOptionsProps) {
               </button>
             ))}
           </div>
-          <p className="text-gray-400 text-sm mt-6">
-            Each package automatically generates random entries for you.
-          </p>
         </div>
       )}
 
@@ -133,6 +136,7 @@ export default function PlayOptions({ game }: PlayOptionsProps) {
           <ManualPicker game={game} />
         </div>
       )}
+      <Toast />
     </div>
   );
 }

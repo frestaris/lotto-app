@@ -51,7 +51,7 @@ export default function GameHeader({ game }: { game: Game }) {
             </h2>
             <button
               onClick={() => setShowCalendar((p) => !p)}
-              className="flex items-center gap-1 px-2 py-1 border border-white/20 rounded-md text-gray-400 hover:text-yellow-400 hover:border-yellow-400 transition"
+              className="flex items-center gap-1 px-2 py-1 border border-white/20 rounded-md text-gray-400 hover:text-yellow-400 hover:border-yellow-400 transition cursor-pointer"
             >
               <CalendarDays className="w-4 h-4" />
               <ChevronDown className="w-4 h-4" />
