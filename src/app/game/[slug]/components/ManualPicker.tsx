@@ -86,10 +86,7 @@ export default function ManualPicker({ game }: { game: Game }) {
           }
         }
 
-        // Sort only actual numbers; keep nulls at the end
-        return filled
-          .slice()
-          .sort((a, b) => (a === null ? 1 : b === null ? -1 : a - b));
+        return filled;
       });
 
       setSelectedNumbers(updatedMain);
@@ -450,7 +447,13 @@ export default function ManualPicker({ game }: { game: Game }) {
         </div>
       </div>
       {/* 🧾 Sticky Footer */}
-      {selectedNumbers.some((nums) => nums.filter(Boolean).length > 0) && (
+      {selectedNumbers.some((nums, i) => {
+        const mainFilled =
+          nums.filter((n) => n !== null).length === game.mainPickCount;
+        const specialFilled =
+          game.specialPickCount > 0 ? selectedSpecialNumbers[i] !== null : true;
+        return mainFilled && specialFilled;
+      }) && (
         <div className="sticky bottom-0 left-0 w-full bg-black/80 backdrop-blur-md border-t border-white/10 z-50">
           <div className="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-center px-6 py-4 gap-4">
             {/* Amount summary */}
