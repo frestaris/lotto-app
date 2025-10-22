@@ -83,20 +83,27 @@ model Game {
   prizes  PrizeTier[]
 }
 
+enum DrawStatus {
+  UPCOMING
+  COMPLETED
+}
+
 model Draw {
-  id                    String   @id @default(cuid())
+  id                    String      @id @default(cuid())
   gameId                String
-  game                  Game     @relation(fields: [gameId], references: [id])
+  game                  Game        @relation(fields: [gameId], references: [id])
   drawNumber            Int
   drawDate              DateTime
   winningMainNumbers    Int[]
   winningSpecialNumbers Int[]
   jackpotAmountCents    Int?
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  status                DrawStatus  @default(UPCOMING)
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
 
   tickets Ticket[]
 }
+
 
 enum TicketStatus {
   PENDING
