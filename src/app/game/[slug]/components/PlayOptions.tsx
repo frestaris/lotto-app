@@ -8,6 +8,7 @@ import { v4 as uuidv4 } from "uuid";
 import type { Game } from "@/types/game";
 import ManualPicker from "./create-your-own/ManualPicker";
 import { Toaster } from "@/hooks/Toaster";
+import { generateNumbers } from "@/utils/generateNumbers";
 
 interface PlayOptionsProps {
   game: Game;
@@ -17,16 +18,6 @@ export default function PlayOptions({ game }: PlayOptionsProps) {
   const [mode, setMode] = useState<"quick" | "custom">("quick");
   const dispatch = useAppDispatch();
   const { showToast, Toast } = Toaster();
-
-  // Generate random lotto numbers
-  const generateRandomNumbers = (count: number, min: number, max: number) => {
-    const numbers: number[] = [];
-    while (numbers.length < count) {
-      const num = Math.floor(Math.random() * (max - min + 1)) + min;
-      if (!numbers.includes(num)) numbers.push(num);
-    }
-    return numbers.sort((a, b) => a - b);
-  };
 
   // Packages for Quick Play
   const quickPlays = [
@@ -40,14 +31,14 @@ export default function PlayOptions({ game }: PlayOptionsProps) {
 
   const handleQuickPlay = (entries: number) => {
     for (let i = 0; i < entries; i++) {
-      const main = generateRandomNumbers(
+      const main = generateNumbers(
         game.mainPickCount,
         game.mainRangeMin,
         game.mainRangeMax
       );
       const special =
         game.specialPickCount > 0
-          ? generateRandomNumbers(
+          ? generateNumbers(
               game.specialPickCount,
               game.specialRangeMin || 1,
               game.specialRangeMax || 10
