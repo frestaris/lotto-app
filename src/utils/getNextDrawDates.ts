@@ -1,4 +1,6 @@
-export function getNextDrawDates(frequency: string, count = 6): Date[] {
+export function getNextDrawDates(frequency: string | null, count = 6): Date[] {
+  if (!frequency) return []; // ✅ guard against null or undefined
+
   const now = new Date();
   const draws: Date[] = [];
   const lower = frequency.toLowerCase();
@@ -27,9 +29,10 @@ export function getNextDrawDates(frequency: string, count = 6): Date[] {
   const [dayOfWeek, timeStr] = frequency.split(" ");
   if (!dayOfWeek || !timeStr) return []; // guard against malformed strings
 
-  const [hour, meridiem] = timeStr.split(/(?=[AP]M)/);
+  const [hour, meridiem] = timeStr.split(/(?=[AP]M)/i);
   const hour24 =
-    parseInt(hour) + (meridiem === "PM" && parseInt(hour) < 12 ? 12 : 0);
+    parseInt(hour) +
+    (meridiem?.toLowerCase() === "pm" && parseInt(hour) < 12 ? 12 : 0);
 
   const days = [
     "Sunday",

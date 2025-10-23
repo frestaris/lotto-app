@@ -1,3 +1,4 @@
+import { getNextDrawDates } from "../src/utils/getNextDrawDates.ts";
 import { PrismaClient, DrawStatus } from "@prisma/client";
 const prisma = new PrismaClient();
 
@@ -78,16 +79,19 @@ async function main() {
     },
   });
 
-  // 🗓️ Generate draws
+  // 🗓️ Generate draws dynamically based on frequency
   const games = [powerball, ozLotto, setForLife, saturdayLotto];
 
   for (const game of games) {
     await prisma.draw.deleteMany({ where: { gameId: game.id } });
 
-    const draws = Array.from({ length: 6 }).map((_, i) => ({
+    // generate future draw dates dynamically using your util
+    const drawDates = getNextDrawDates(game.drawFrequency ?? "Daily 9 PM", 6);
+
+    const draws = drawDates.map((date, i) => ({
       gameId: game.id,
       drawNumber: i + 1,
-      drawDate: new Date(Date.now() + i * 7 * 24 * 60 * 60 * 1000),
+      drawDate: date, // correct per game frequency
       jackpotAmountCents: 8_000_000_00 + i * 500_000_00,
       status: DrawStatus.UPCOMING,
       winningMainNumbers: [],
