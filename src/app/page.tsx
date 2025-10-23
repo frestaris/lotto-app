@@ -1,11 +1,12 @@
 "use client";
 
-import { useGetGamesQuery } from "@/redux/slices/gameApi";
+import { useGetAllGamesQuery } from "@/redux/slices/gameApi";
 import Image from "next/image";
 import Link from "next/link";
+import type { Game } from "@/types/game";
 
 export default function HomePage() {
-  const { data: games = [], isLoading, error } = useGetGamesQuery();
+  const { data: games = [], isLoading, error } = useGetAllGamesQuery(undefined);
 
   if (isLoading)
     return (
@@ -35,7 +36,7 @@ export default function HomePage() {
       </section>
 
       <section className="max-w-6xl mx-auto px-6 pb-20 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-        {games.map((game) => (
+        {games.map((game: Game) => (
           <Link
             key={game.id}
             href={`/game/${game.slug}`}

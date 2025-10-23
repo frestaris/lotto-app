@@ -54,16 +54,31 @@ export default function CartPage() {
                   key={t.id}
                   className="bg-white/10 p-4 rounded-lg flex justify-between items-center"
                 >
-                  <div className="text-left">
+                  <div className="text-left space-y-1">
                     <h3 className="font-semibold text-yellow-300">
                       {t.gameName}
                     </h3>
-                    <p className="text-sm text-gray-400">
+
+                    {t.drawDate && (
+                      <p className="text-xs sm:text-sm text-gray-400">
+                        🎟️ Draw on{" "}
+                        <span className="text-yellow-400 font-semibold">
+                          {new Date(t.drawDate).toLocaleDateString(undefined, {
+                            weekday: "short",
+                            day: "numeric",
+                            month: "short",
+                          })}
+                        </span>
+                      </p>
+                    )}
+
+                    <p className="text-xs sm:text-sm text-gray-400">
                       Main: {t.numbers.join(", ")}{" "}
                       {t.specialNumbers.length > 0 &&
                         `| Special: ${t.specialNumbers.join(", ")}`}
                     </p>
                   </div>
+
                   <button
                     onClick={() => dispatch(removeTicket(t.id))}
                     className="text-red-400 hover:text-red-300"

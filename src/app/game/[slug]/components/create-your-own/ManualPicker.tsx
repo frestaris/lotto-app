@@ -5,12 +5,19 @@ import { v4 as uuidv4 } from "uuid";
 import { useAppDispatch } from "@/redux/store";
 import { addTicket } from "@/redux/slices/cartSlice";
 import type { Game } from "@/types/game";
+import { getNextDrawDates } from "@/utils/getNextDrawDates";
 
 import GameAccordion from "./GameAccordion";
 import PickerFooter from "./PickerFooter";
 import PickerSetup from "./PickerSetup";
 
-export default function ManualPicker({ game }: { game: Game }) {
+export default function ManualPicker({
+  game,
+  selectedDraw,
+}: {
+  game: Game;
+  selectedDraw: string | null;
+}) {
   const dispatch = useAppDispatch();
 
   const [gamesCount, setGamesCount] = useState(3);
@@ -139,6 +146,11 @@ export default function ManualPicker({ game }: { game: Game }) {
           id: uuidv4(),
           gameId: game.id,
           gameName: game.name,
+          drawDate:
+            selectedDraw ||
+            (typeof game.drawFrequency === "string"
+              ? getNextDrawDates(game.drawFrequency, 1)[0].toISOString()
+              : null),
           numbers: mainNumbers,
           specialNumbers: specialNumber ? [specialNumber] : [],
           priceCents: game.priceCents,
@@ -189,6 +201,7 @@ export default function ManualPicker({ game }: { game: Game }) {
         selectedNumbers={selectedNumbers}
         selectedSpecialNumbers={selectedSpecialNumbers}
         game={game}
+        selectedDraw={selectedDraw}
         onAdd={handleAddToCart}
       />
     </div>

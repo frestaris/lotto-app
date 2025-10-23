@@ -1,21 +1,38 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import type { Game } from "@/types/game";
+import { baseApi } from "../api/baseApi";
 
-export const gameApi = createApi({
-  reducerPath: "gameApi",
-  baseQuery: fetchBaseQuery({ baseUrl: "/api" }),
+export const gameApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    // Fetch all games
-    getGames: builder.query<Game[], void>({
-      query: () => "games",
+    getAllGames: builder.query({
+      query: () => ({ url: "/games" }),
+      providesTags: ["Game"],
     }),
-
-    // Fetch single game by slug
-    getGameBySlug: builder.query<Game, string>({
-      query: (slug) => `games/${slug}`,
+    getGameBySlug: builder.query({
+      query: (slug) => ({ url: `/games/${slug}` }),
+      providesTags: ["Game"],
+    }),
+    getDrawsByGameId: builder.query({
+      query: (gameId) => ({ url: `/draws/game/${gameId}` }),
+      providesTags: ["Draw"],
+    }),
+    createTicket: builder.mutation({
+      query: (body) => ({
+        url: "/tickets",
+        method: "POST",
+        data: body,
+      }),
+      invalidatesTags: ["Ticket"],
+    }),
+    getUserTickets: builder.query({
+      query: (userId) => ({ url: `/tickets/user/${userId}` }),
+      providesTags: ["Ticket"],
     }),
   }),
 });
 
-// ✅ Auto-generated hooks
-export const { useGetGamesQuery, useGetGameBySlugQuery } = gameApi;
+export const {
+  useGetAllGamesQuery,
+  useGetGameBySlugQuery,
+  useGetDrawsByGameIdQuery,
+  useCreateTicketMutation,
+  useGetUserTicketsQuery,
+} = gameApi;

@@ -1,9 +1,9 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, DrawStatus } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
   // 🎯 Powerball
-  await prisma.game.upsert({
+  const powerball = await prisma.game.upsert({
     where: { slug: "powerball" },
     update: {},
     create: {
@@ -24,7 +24,7 @@ async function main() {
   });
 
   // 💫 Oz Lotto
-  await prisma.game.upsert({
+  const ozLotto = await prisma.game.upsert({
     where: { slug: "oz-lotto" },
     update: {},
     create: {
@@ -42,7 +42,7 @@ async function main() {
   });
 
   // 💰 Set for Life
-  await prisma.game.upsert({
+  const setForLife = await prisma.game.upsert({
     where: { slug: "set-for-life" },
     update: {},
     create: {
@@ -59,8 +59,8 @@ async function main() {
     },
   });
 
-  // 🎟️ Saturday Lotto (new game)
-  await prisma.game.upsert({
+  // 🎟️ Saturday Lotto
+  const saturdayLotto = await prisma.game.upsert({
     where: { slug: "saturday-lotto" },
     update: {},
     create: {
@@ -78,9 +78,29 @@ async function main() {
     },
   });
 
-  console.log("✅ Seed completed: Games inserted");
+  // 🗓️ Generate draws
+  const games = [powerball, ozLotto, setForLife, saturdayLotto];
+
+  for (const game of games) {
+    await prisma.draw.deleteMany({ where: { gameId: game.id } });
+
+    const draws = Array.from({ length: 6 }).map((_, i) => ({
+      gameId: game.id,
+      drawNumber: i + 1,
+      drawDate: new Date(Date.now() + i * 7 * 24 * 60 * 60 * 1000),
+      jackpotAmountCents: 8_000_000_00 + i * 500_000_00,
+      status: DrawStatus.UPCOMING,
+      winningMainNumbers: [],
+      winningSpecialNumbers: [],
+    }));
+
+    await prisma.draw.createMany({ data: draws });
+    console.log(`🗓️ Created ${draws.length} draws for ${game.name}`);
+  }
+
+  console.log("✅ Seed completed successfully.");
 }
 
 main()
-  .catch((e) => console.error(e))
+  .catch((e) => console.error("❌ Seed failed:", e))
   .finally(() => prisma.$disconnect());

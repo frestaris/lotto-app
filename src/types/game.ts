@@ -17,3 +17,16 @@ export interface Game {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface Draw {
+  id: string;
+  gameId: string;
+  drawNumber: number;
+  drawDate: string;
+  jackpotAmountCents: number | null;
+  status: "UPCOMING" | "COMPLETED";
+  winningMainNumbers: number[];
+  winningSpecialNumbers: number[];
+  createdAt: string;
+  updatedAt: string;
+}

@@ -4,16 +4,16 @@ import { configureStore } from "@reduxjs/toolkit";
 import { useDispatch, useSelector, TypedUseSelectorHook } from "react-redux";
 import cartReducer from "./slices/cartSlice";
 import ticketReducer from "./slices/ticketSlice";
-import { gameApi } from "./slices/gameApi";
+import { baseApi } from "./api/baseApi";
 export const makeStore = () =>
   configureStore({
     reducer: {
       cart: cartReducer,
       tickets: ticketReducer,
-      [gameApi.reducerPath]: gameApi.reducer,
+      [baseApi.reducerPath]: baseApi.reducer,
     },
     middleware: (getDefaultMiddleware) =>
-      getDefaultMiddleware().concat(gameApi.middleware),
+      getDefaultMiddleware().concat(baseApi.middleware),
     devTools: process.env.NODE_ENV !== "production",
   });
 

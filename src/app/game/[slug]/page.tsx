@@ -5,10 +5,12 @@ import { useGetGameBySlugQuery } from "@/redux/slices/gameApi";
 import { Loader2 } from "lucide-react";
 import GameHeader from "./components/GameHeader";
 import PlayOptions from "./components/PlayOptions";
+import { useState } from "react";
 
 export default function GameDetailsPage() {
   const { slug } = useParams() as { slug: string };
   const { data: game, isLoading, error } = useGetGameBySlugQuery(slug);
+  const [selectedDraw, setSelectedDraw] = useState<string | null>(null);
 
   if (isLoading)
     return (
@@ -27,8 +29,12 @@ export default function GameDetailsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] to-[#1c1c1c] text-white pb-16">
-      <GameHeader game={game} />
-      <PlayOptions game={game} />
+      <GameHeader
+        game={game}
+        selectedDraw={selectedDraw}
+        setSelectedDraw={setSelectedDraw}
+      />
+      <PlayOptions game={game} selectedDraw={selectedDraw} />
     </div>
   );
 }

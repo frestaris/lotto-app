@@ -9,13 +9,21 @@ import type { Game } from "@/types/game";
 import ManualPicker from "./create-your-own/ManualPicker";
 import { Toaster } from "@/hooks/Toaster";
 import { generateNumbers } from "@/utils/generateNumbers";
+import { getNextDrawDates } from "@/utils/getNextDrawDates";
 
 interface PlayOptionsProps {
   game: Game;
+  selectedDraw: string | null;
 }
 
-export default function PlayOptions({ game }: PlayOptionsProps) {
+export default function PlayOptions({ game, selectedDraw }: PlayOptionsProps) {
   const [mode, setMode] = useState<"quick" | "custom">("quick");
+
+  // Fallback if user didn't open GameHeader yet
+  const nextAvailableDraw = game.drawFrequency
+    ? getNextDrawDates(game.drawFrequency, 1)[0].toISOString()
+    : null;
+
   const dispatch = useAppDispatch();
   const { showToast, Toast } = Toaster();
 
@@ -50,6 +58,7 @@ export default function PlayOptions({ game }: PlayOptionsProps) {
           id: uuidv4(),
           gameId: game.id,
           gameName: game.name,
+          drawDate: selectedDraw || nextAvailableDraw,
           numbers: main,
           specialNumbers: special,
           priceCents: game.priceCents,
@@ -124,7 +133,7 @@ export default function PlayOptions({ game }: PlayOptionsProps) {
           <h3 className="text-2xl font-semibold mb-6 text-yellow-400">
             Pick your numbers
           </h3>
-          <ManualPicker game={game} />
+          <ManualPicker game={game} selectedDraw={selectedDraw} />
         </div>
       )}
       <Toast />
