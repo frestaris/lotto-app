@@ -1,20 +1,35 @@
+import type { Game, Draw } from "@/types/game";
 import { baseApi } from "../api/baseApi";
 
 export const gameApi = baseApi.injectEndpoints({
+  overrideExisting: true,
   endpoints: (builder) => ({
-    getAllGames: builder.query({
+    getAllGames: builder.query<Game[], void>({
       query: () => ({ url: "/games" }),
       providesTags: ["Game"],
     }),
-    getGameBySlug: builder.query({
+
+    getGameBySlug: builder.query<Game, string>({
       query: (slug) => ({ url: `/games/${slug}` }),
       providesTags: ["Game"],
     }),
-    getDrawsByGameId: builder.query({
+
+    getDrawsByGameId: builder.query<Draw[], string>({
       query: (gameId) => ({ url: `/draws/game/${gameId}` }),
       providesTags: ["Draw"],
     }),
-    createTicket: builder.mutation({
+
+    createTicket: builder.mutation<
+      { success: boolean; id?: string },
+      {
+        userId: string;
+        gameId: string;
+        drawId: string;
+        numbers: number[];
+        specialNumbers: number[];
+        priceCents: number;
+      }
+    >({
       query: (body) => ({
         url: "/tickets",
         method: "POST",
@@ -22,7 +37,19 @@ export const gameApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Ticket"],
     }),
-    getUserTickets: builder.query({
+
+    getUserTickets: builder.query<
+      {
+        id: string;
+        gameId: string;
+        drawId: string;
+        numbers: number[];
+        specialNumbers: number[];
+        priceCents: number;
+        createdAt: string;
+      }[],
+      string
+    >({
       query: (userId) => ({ url: `/tickets/user/${userId}` }),
       providesTags: ["Ticket"],
     }),

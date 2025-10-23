@@ -4,7 +4,7 @@ import { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { useAppDispatch } from "@/redux/store";
 import { addTicket } from "@/redux/slices/cartSlice";
-import type { Game } from "@/types/game";
+import type { Draw, Game } from "@/types/game";
 import { getNextDrawDates } from "@/utils/getNextDrawDates";
 
 import GameAccordion from "./GameAccordion";
@@ -16,7 +16,7 @@ export default function ManualPicker({
   selectedDraw,
 }: {
   game: Game;
-  selectedDraw: string | null;
+  selectedDraw: Draw | null;
 }) {
   const dispatch = useAppDispatch();
 
@@ -146,8 +146,9 @@ export default function ManualPicker({
           id: uuidv4(),
           gameId: game.id,
           gameName: game.name,
+          drawId: selectedDraw?.id || null,
           drawDate:
-            selectedDraw ||
+            selectedDraw?.drawDate ||
             (typeof game.drawFrequency === "string"
               ? getNextDrawDates(game.drawFrequency, 1)[0].toISOString()
               : null),

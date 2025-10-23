@@ -7,6 +7,7 @@ export interface TicketItem {
   id: string;
   gameId: string;
   gameName: string;
+  drawId?: string | null;
   drawDate: string | null;
   numbers: number[];
   specialNumbers: number[];

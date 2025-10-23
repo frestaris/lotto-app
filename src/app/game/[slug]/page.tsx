@@ -6,11 +6,12 @@ import { Loader2 } from "lucide-react";
 import GameHeader from "./components/GameHeader";
 import PlayOptions from "./components/PlayOptions";
 import { useState } from "react";
+import { Draw } from "@/types/game";
 
 export default function GameDetailsPage() {
   const { slug } = useParams() as { slug: string };
   const { data: game, isLoading, error } = useGetGameBySlugQuery(slug);
-  const [selectedDraw, setSelectedDraw] = useState<string | null>(null);
+  const [selectedDraw, setSelectedDraw] = useState<Draw | null>(null);
 
   if (isLoading)
     return (

@@ -1,12 +1,12 @@
 "use client";
 import { ShoppingCart } from "lucide-react";
-import type { Game } from "@/types/game";
+import type { Draw, Game } from "@/types/game";
 
 interface PickerFooterProps {
   selectedNumbers: (number | null)[][];
   selectedSpecialNumbers: (number | null)[];
   game: Game;
-  selectedDraw: string | null;
+  selectedDraw: Draw | null;
   onAdd: () => void;
 }
 
@@ -36,7 +36,7 @@ export default function PickerFooter({
             <div className="text-sm text-gray-400 sm:mb-0 mb-2">
               🎟️ For draw on{" "}
               <span className="text-yellow-400 font-semibold">
-                {new Date(selectedDraw).toLocaleDateString(undefined, {
+                {new Date(selectedDraw.drawDate).toLocaleDateString(undefined, {
                   weekday: "long",
                   day: "numeric",
                   month: "short",

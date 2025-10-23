@@ -5,7 +5,7 @@ import { Dice5, Hand } from "lucide-react";
 import { useAppDispatch } from "@/redux/store";
 import { addTicket } from "@/redux/slices/cartSlice";
 import { v4 as uuidv4 } from "uuid";
-import type { Game } from "@/types/game";
+import type { Draw, Game } from "@/types/game";
 import ManualPicker from "./create-your-own/ManualPicker";
 import { Toaster } from "@/hooks/Toaster";
 import { generateNumbers } from "@/utils/generateNumbers";
@@ -13,7 +13,7 @@ import { getNextDrawDates } from "@/utils/getNextDrawDates";
 
 interface PlayOptionsProps {
   game: Game;
-  selectedDraw: string | null;
+  selectedDraw: Draw | null;
 }
 
 export default function PlayOptions({ game, selectedDraw }: PlayOptionsProps) {
@@ -58,7 +58,7 @@ export default function PlayOptions({ game, selectedDraw }: PlayOptionsProps) {
           id: uuidv4(),
           gameId: game.id,
           gameName: game.name,
-          drawDate: selectedDraw || nextAvailableDraw,
+          drawDate: selectedDraw?.drawDate || nextAvailableDraw,
           numbers: main,
           specialNumbers: special,
           priceCents: game.priceCents,
