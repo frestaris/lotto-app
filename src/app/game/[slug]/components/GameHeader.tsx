@@ -34,7 +34,7 @@ export default function GameHeader({
         setSelectedDraw(futureDraws[0]);
       }
     }
-  }, [game.drawFrequency, selectedDraw, setSelectedDraw]);
+  }, [game.drawFrequency]);
 
   if (!draws.length) {
     return (

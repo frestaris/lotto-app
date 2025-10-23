@@ -1,8 +1,9 @@
 "use client";
+
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAppSelector } from "@/redux/store";
 import { User, ShoppingCart, Settings, Ticket, LogOut } from "lucide-react";
 
@@ -10,6 +11,12 @@ export default function Navbar() {
   const { data: session } = useSession();
   const [open, setOpen] = useState(false);
   const { tickets } = useAppSelector((state) => state.cart);
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Only render cart badge after client hydration
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   return (
     <nav className="sticky top-0 z-50 bg-[#0a0a0a]/90 backdrop-blur-md border-b border-white/10">
@@ -27,15 +34,18 @@ export default function Navbar() {
         </Link>
 
         <div className="flex items-center gap-5">
+          {/* 🛒 Cart Icon */}
           <Link href="/cart" className="relative group">
             <ShoppingCart className="text-2xl text-white hover:text-yellow-400 transition" />
-            {tickets.length > 0 && (
+            {/* ✅ render badge only after mount to prevent SSR mismatch */}
+            {isMounted && tickets.length > 0 && (
               <span className="absolute -top-2 -right-2 bg-yellow-400 text-black text-xs font-bold px-1.5 rounded-full group-hover:scale-105 transition">
                 {tickets.length}
               </span>
             )}
           </Link>
 
+          {/* 👤 Auth buttons */}
           {!session ? (
             <Link
               href="/login"
