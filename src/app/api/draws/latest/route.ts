@@ -5,38 +5,43 @@ const prisma = new PrismaClient();
 
 /**
  * GET /api/draws/latest
- * Returns the most recent draw per game
+ * Returns the most recent draw per active game
  */
 export async function GET() {
   try {
-    // Get all active games
-    const games = await prisma.game.findMany({
+    const latestDraws = await prisma.game.findMany({
       where: { isActive: true },
-      select: { id: true, name: true, logoUrl: true },
+      select: {
+        id: true,
+        name: true,
+        logoUrl: true,
+        draws: {
+          take: 1,
+          orderBy: { drawNumber: "desc" },
+          select: {
+            drawNumber: true,
+            drawDate: true,
+            jackpotAmountCents: true,
+            status: true,
+            winningMainNumbers: true,
+            winningSpecialNumbers: true,
+          },
+        },
+      },
     });
 
-    // For each game, fetch its latest draw
-    const results = await Promise.all(
-      games.map(async (game) => {
-        const latestDraw = await prisma.draw.findFirst({
-          where: { gameId: game.id },
-          orderBy: { drawNumber: "desc" },
-        });
-        if (!latestDraw) return null;
-        return {
-          gameId: game.id,
-          gameName: game.name,
-          logoUrl: game.logoUrl,
-          drawNumber: latestDraw.drawNumber,
-          drawDate: latestDraw.drawDate,
-          winningMainNumbers: latestDraw.winningMainNumbers,
-          winningSpecialNumbers: latestDraw.winningSpecialNumbers,
-        };
-      })
-    );
+    const formatted = latestDraws
+      .filter((g) => g.draws.length)
+      .map((g) => ({
+        gameId: g.id,
+        gameName: g.name,
+        logoUrl: g.logoUrl,
+        ...g.draws[0],
+        winningMainNumbers: g.draws[0].winningMainNumbers ?? [],
+        winningSpecialNumbers: g.draws[0].winningSpecialNumbers ?? [],
+      }));
 
-    const filtered = results.filter(Boolean);
-    return NextResponse.json(filtered, { status: 200 });
+    return NextResponse.json(formatted, { status: 200 });
   } catch (error) {
     console.error("❌ Error fetching latest draws:", error);
     return NextResponse.json(

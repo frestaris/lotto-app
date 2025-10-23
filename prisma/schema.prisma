@@ -115,7 +115,7 @@ model Ticket {
   id             String        @id @default(cuid())
   userId         String
   gameId         String
-  drawId         String?
+  drawId         String
   numbers        Int[]
   specialNumbers Int[]
   priceCents     Int
@@ -125,10 +125,11 @@ model Ticket {
 
   user User @relation(fields: [userId], references: [id])
   game Game @relation(fields: [gameId], references: [id])
-  draw Draw? @relation(fields: [drawId], references: [id])
+  draw Draw @relation(fields: [drawId], references: [id], onDelete: Cascade)
 
   @@index([gameId, status])
 }
+
 
 
 model PrizeTier {
