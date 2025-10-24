@@ -5,19 +5,15 @@ const prisma = new PrismaClient();
 
 /**
  * GET /api/draws/latest
- * Returns the most recent draw per active game
+ * Always returns the draw closest to today (completed or upcoming)
  */
 export async function GET() {
   try {
-    const latestDraws = await prisma.game.findMany({
+    const games = await prisma.game.findMany({
       where: { isActive: true },
-      select: {
-        id: true,
-        name: true,
-        logoUrl: true,
+      include: {
         draws: {
-          take: 1,
-          orderBy: { drawNumber: "desc" },
+          orderBy: { drawDate: "asc" }, // we'll sort manually afterward
           select: {
             drawNumber: true,
             drawDate: true,
@@ -30,16 +26,34 @@ export async function GET() {
       },
     });
 
-    const formatted = latestDraws
-      .filter((g) => g.draws.length)
-      .map((g) => ({
-        gameId: g.id,
-        gameName: g.name,
-        logoUrl: g.logoUrl,
-        ...g.draws[0],
-        winningMainNumbers: g.draws[0].winningMainNumbers ?? [],
-        winningSpecialNumbers: g.draws[0].winningSpecialNumbers ?? [],
-      }));
+    const now = new Date();
+
+    const formatted = games
+      .map((g) => {
+        // find draw closest to 'now' (either before or after)
+        const closest = g.draws.reduce((prev, curr) => {
+          const diffPrev = Math.abs(
+            new Date(prev.drawDate).getTime() - now.getTime()
+          );
+          const diffCurr = Math.abs(
+            new Date(curr.drawDate).getTime() - now.getTime()
+          );
+          return diffCurr < diffPrev ? curr : prev;
+        }, g.draws[0]);
+
+        return {
+          gameId: g.id,
+          gameName: g.name,
+          logoUrl: g.logoUrl,
+          drawNumber: closest.drawNumber,
+          drawDate: closest.drawDate,
+          jackpotAmountCents: closest.jackpotAmountCents,
+          status: closest.status,
+          winningMainNumbers: closest.winningMainNumbers ?? [],
+          winningSpecialNumbers: closest.winningSpecialNumbers ?? [],
+        };
+      })
+      .filter(Boolean);
 
     return NextResponse.json(formatted, { status: 200 });
   } catch (error) {

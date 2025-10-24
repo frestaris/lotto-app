@@ -30,3 +30,15 @@ export interface Draw {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface LatestDraw {
+  gameId: string;
+  gameName: string;
+  logoUrl: string | null;
+  drawNumber: number;
+  drawDate: string;
+  jackpotAmountCents?: number | null;
+  status: "UPCOMING" | "COMPLETED";
+  winningMainNumbers: number[];
+  winningSpecialNumbers: number[];
+}

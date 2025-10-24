@@ -3,33 +3,29 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-/**
- * GET /api/draws/game/:gameId
- * Returns all draws for a specific game
- */
 export async function GET(
   request: Request,
-  context: { params: Promise<{ gameId: string }> } // ✅ context object
+  { params }: { params: { gameId: string } }
 ) {
   try {
-    // ✅ await params from context
-    const { gameId } = await context.params;
-
     const draws = await prisma.draw.findMany({
-      where: { gameId },
-      orderBy: { drawNumber: "desc" },
+      where: { gameId: params.gameId },
+      orderBy: { drawDate: "desc" },
+      select: {
+        id: true,
+        drawNumber: true,
+        drawDate: true,
+        status: true,
+        jackpotAmountCents: true,
+        winningMainNumbers: true,
+        winningSpecialNumbers: true,
+        createdAt: true,
+      },
     });
 
-    if (!draws || draws.length === 0) {
-      return NextResponse.json(
-        { message: "No draws found for this game." },
-        { status: 404 }
-      );
-    }
-
     return NextResponse.json(draws, { status: 200 });
-  } catch (error) {
-    console.error("❌ Error fetching draws by game:", error);
+  } catch (err) {
+    console.error("❌ Error fetching draws:", err);
     return NextResponse.json(
       { error: "Failed to fetch draws" },
       { status: 500 }

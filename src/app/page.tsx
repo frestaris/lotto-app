@@ -24,17 +24,28 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] to-[#1c1c1c] text-white">
+      {/* 🏠 Hero Section */}
       <section className="text-center py-16 px-6">
         <h1 className="text-4xl md:text-5xl font-bold mb-4">
           Play Your Favourite <span className="text-yellow-400">Lotto</span>{" "}
           Games
         </h1>
-        <p className="text-gray-300 max-w-2xl mx-auto">
+        <p className="text-gray-300 max-w-2xl mx-auto mb-8">
           Choose your lucky numbers, play online, and check results all in one
           place.
         </p>
+
+        {/* 🎮 CTA Buttons */}
+
+        <Link
+          href="/results"
+          className="border border-yellow-400 text-yellow-400 font-semibold px-8 py-3 rounded-lg hover:bg-yellow-400 hover:text-black transition"
+        >
+          Latest Results
+        </Link>
       </section>
 
+      {/* 🎲 Games Grid */}
       <section className="max-w-6xl mx-auto px-6 pb-20 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
         {games.map((game: Game) => (
           <Link
@@ -44,7 +55,7 @@ export default function HomePage() {
           >
             <div className="relative h-48 bg-black">
               <Image
-                src={game.logoUrl || "/images/powerball.png"}
+                src={game.logoUrl || "/images/default-logo.png"}
                 alt={game.name}
                 fill
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"

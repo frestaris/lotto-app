@@ -2,8 +2,8 @@ import cron from "node-cron";
 import { PrismaClient, TicketStatus, type Game } from "@prisma/client";
 
 import dotenv from "dotenv";
-import { generateNumbers } from "../src/utils/generateNumbers";
-import { getCronExpression } from "../src/utils/getCronExpression";
+import { generateNumbers } from "../src/utils/generateNumbers.ts";
+import { getCronExpression } from "../src/utils/getCronExpression.ts";
 
 dotenv.config({ path: "../.env" });
 
