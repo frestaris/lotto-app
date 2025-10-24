@@ -42,18 +42,27 @@ export async function GET() {
 
     const enhanced = tickets.map((t) => {
       const draw = t.draw;
+      let status: "WON" | "LOST" | "PENDING" = "PENDING";
 
-      // ✅ handle possible null draw
-      if (!draw) {
-        return { ...t, won: false };
+      if (draw?.status === "COMPLETED") {
+        const mainMatch = t.numbers.filter((n) =>
+          draw.winningMainNumbers.includes(n)
+        ).length;
+        const specialMatch = t.specialNumbers.filter((n) =>
+          draw.winningSpecialNumbers.includes(n)
+        ).length;
+
+        if (
+          mainMatch === draw.winningMainNumbers.length &&
+          specialMatch === draw.winningSpecialNumbers.length
+        ) {
+          status = "WON";
+        } else {
+          status = "LOST";
+        }
       }
 
-      const won =
-        draw.status === "COMPLETED" &&
-        Array.isArray(draw.winningMainNumbers) &&
-        t.numbers.some((n) => draw.winningMainNumbers.includes(n));
-
-      return { ...t, won };
+      return { ...t, result: status };
     });
 
     return NextResponse.json(enhanced, { status: 200 });

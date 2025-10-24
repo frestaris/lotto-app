@@ -1,4 +1,5 @@
 import type { Game, Draw, LatestDraw } from "@/types/game";
+import type { UserTicket } from "@/types/ticket";
 import { baseApi } from "../api/baseApi";
 
 export const gameApi = baseApi.injectEndpoints({
@@ -46,19 +47,8 @@ export const gameApi = baseApi.injectEndpoints({
       invalidatesTags: ["Ticket"],
     }),
 
-    getUserTickets: builder.query<
-      {
-        id: string;
-        gameId: string;
-        drawId: string;
-        numbers: number[];
-        specialNumbers: number[];
-        priceCents: number;
-        createdAt: string;
-      }[],
-      string
-    >({
-      query: (userId) => ({ url: `/tickets/user/${userId}` }),
+    getUserTickets: builder.query<UserTicket[], string>({
+      query: () => ({ url: `/tickets/user` }),
       providesTags: ["Ticket"],
     }),
   }),
