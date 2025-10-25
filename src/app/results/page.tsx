@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
-import { useGetLatestDrawsQuery } from "@/redux/slices/gameApi";
 import Image from "next/image";
+import { useGetLatestDrawsQuery } from "@/redux/slices/gameApi";
 
 export default function ResultsPage() {
   const { data: draws = [], isLoading } = useGetLatestDrawsQuery();
@@ -9,31 +9,44 @@ export default function ResultsPage() {
   if (isLoading)
     return <div className="text-gray-400 text-center py-10">Loading...</div>;
 
+  if (!draws.length)
+    return (
+      <div className="text-gray-400 text-center py-10">
+        No draws available yet.
+      </div>
+    );
+
   return (
     <div className="max-w-5xl mx-auto py-10 text-white">
       <h1 className="text-3xl text-center font-bold mb-6 text-yellow-400">
-        Results
+        Latest Results
       </h1>
+
       <div className="grid sm:grid-cols-2 gap-6 mx-2">
-        {draws.map((g) => {
-          const isUpcoming = g.status === "UPCOMING";
-          const drawDate = new Date(g.drawDate);
+        {draws.map((d) => {
+          const drawDate = new Date(d.drawDate);
           const formattedDate = drawDate.toLocaleDateString(undefined, {
             weekday: "short",
             day: "numeric",
             month: "short",
+            year: "numeric",
           });
+
+          const isCompleted = d.displayStatus === "COMPLETED";
+          const isToday = d.displayStatus === "TODAY";
+          const isAwaiting = d.displayStatus === "AWAITING_RESULTS";
 
           return (
             <Link
-              key={g.gameId}
-              href={`/results/${g.gameName.toLowerCase().replace(/\s+/g, "-")}`}
+              key={`${d.gameId}-${d.drawNumber}`}
+              href={`/results/${d.gameName.toLowerCase().replace(/\s+/g, "-")}`}
               className="bg-white/5 hover:bg-white/10 p-6 rounded-xl border border-white/10 transition"
             >
+              {/* Header */}
               <div className="flex items-center gap-4">
                 <Image
-                  src={g.logoUrl || "/images/default-logo.png"}
-                  alt={g.gameName}
+                  src={d.logoUrl || "/images/default-logo.png"}
+                  alt={d.gameName}
                   width={56}
                   height={56}
                   priority
@@ -41,21 +54,49 @@ export default function ResultsPage() {
                 />
 
                 <div>
-                  <h2 className="text-xl font-semibold">{g.gameName}</h2>
+                  <h2 className="text-xl font-semibold">{d.gameName}</h2>
                   <p className="text-sm text-gray-400 mt-1">
-                    {isUpcoming ? (
-                      <>
-                        Draw {g.drawNumber} —{" "}
-                        <span className="text-yellow-400 font-medium">
-                          coming {formattedDate}
-                        </span>
-                      </>
+                    Draw {d.drawNumber} —{" "}
+                    {isCompleted ? (
+                      <span className="text-green-400 font-medium">
+                        completed on {formattedDate}
+                      </span>
+                    ) : isToday ? (
+                      <span className="text-yellow-400 font-medium">
+                        coming today
+                      </span>
+                    ) : isAwaiting ? (
+                      <span className="text-orange-400 font-medium">
+                        awaiting results
+                      </span>
                     ) : (
-                      <>Draw {g.drawNumber}</>
+                      <span className="text-yellow-400 font-medium">
+                        coming {formattedDate}
+                      </span>
                     )}
                   </p>
                 </div>
               </div>
+
+              {/* 🎯 Winning numbers */}
+              {isCompleted && d.winningMainNumbers?.length > 0 && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {d.winningMainNumbers.map((num: number, i: number) => (
+                    <span
+                      key={i}
+                      className="bg-yellow-400 text-black font-semibold w-7 h-7 flex items-center justify-center rounded-full text-sm"
+                    >
+                      {num}
+                    </span>
+                  ))}
+
+                  {d.winningSpecialNumbers?.length > 0 && (
+                    <span className="bg-orange-500 text-black font-semibold w-7 h-7 flex items-center justify-center rounded-full text-sm ml-2">
+                      {d.winningSpecialNumbers.join(", ")}
+                    </span>
+                  )}
+                </div>
+              )}
             </Link>
           );
         })}

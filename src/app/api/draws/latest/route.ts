@@ -1,20 +1,20 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, DrawStatus } from "@prisma/client";
+import { hasDrawTimePassed } from "@/utils/hasDrawTimePassed";
 
 const prisma = new PrismaClient();
 
-/**
- * GET /api/draws/latest
- * Always returns the draw closest to today (completed or upcoming)
- */
+type DisplayStatus = DrawStatus | "TODAY";
+
 export async function GET() {
   try {
     const games = await prisma.game.findMany({
       where: { isActive: true },
       include: {
         draws: {
-          orderBy: { drawDate: "asc" }, // we'll sort manually afterward
+          orderBy: { drawDate: "asc" },
           select: {
+            id: true,
             drawNumber: true,
             drawDate: true,
             jackpotAmountCents: true,
@@ -28,34 +28,60 @@ export async function GET() {
 
     const now = new Date();
 
-    const formatted = games
-      .map((g) => {
-        // find draw closest to 'now' (either before or after)
-        const closest = g.draws.reduce((prev, curr) => {
-          const diffPrev = Math.abs(
-            new Date(prev.drawDate).getTime() - now.getTime()
-          );
-          const diffCurr = Math.abs(
-            new Date(curr.drawDate).getTime() - now.getTime()
-          );
-          return diffCurr < diffPrev ? curr : prev;
-        }, g.draws[0]);
+    const formatted = games.map((g) => {
+      const draws = g.draws;
+      if (draws.length === 0) return null;
 
-        return {
-          gameId: g.id,
-          gameName: g.name,
-          logoUrl: g.logoUrl,
-          drawNumber: closest.drawNumber,
-          drawDate: closest.drawDate,
-          jackpotAmountCents: closest.jackpotAmountCents,
-          status: closest.status,
-          winningMainNumbers: closest.winningMainNumbers ?? [],
-          winningSpecialNumbers: closest.winningSpecialNumbers ?? [],
-        };
-      })
-      .filter(Boolean);
+      // 1️⃣ Latest completed draw
+      const completed = draws
+        .filter((d) => d.status === "COMPLETED" && new Date(d.drawDate) <= now)
+        .sort(
+          (a, b) =>
+            new Date(b.drawDate).getTime() - new Date(a.drawDate).getTime()
+        )[0];
 
-    return NextResponse.json(formatted, { status: 200 });
+      // 2️⃣ If no completed, find today's upcoming
+      const todayUpcoming = draws.find(
+        (d) =>
+          d.status === "UPCOMING" &&
+          new Date(d.drawDate).toDateString() === now.toDateString()
+      );
+
+      // 3️⃣ Otherwise, next upcoming
+      const nextUpcoming = draws.find(
+        (d) => d.status === "UPCOMING" && new Date(d.drawDate) > now
+      );
+
+      const target = completed || todayUpcoming || nextUpcoming;
+      let displayStatus: DisplayStatus = target?.status ?? "UPCOMING";
+
+      // If it's today and not yet drawn → mark as "TODAY"
+      if (
+        target?.status === "UPCOMING" &&
+        todayUpcoming &&
+        todayUpcoming.id === target.id &&
+        !hasDrawTimePassed(new Date(target.drawDate), g.drawFrequency)
+      ) {
+        displayStatus = "TODAY";
+      }
+
+      return target
+        ? {
+            gameId: g.id,
+            gameName: g.name,
+            logoUrl: g.logoUrl,
+            drawNumber: target.drawNumber,
+            drawDate: target.drawDate,
+            jackpotAmountCents: target.jackpotAmountCents,
+            winningMainNumbers: target.winningMainNumbers ?? [],
+            winningSpecialNumbers: target.winningSpecialNumbers ?? [],
+            dbStatus: target.status,
+            displayStatus,
+          }
+        : null;
+    });
+
+    return NextResponse.json(formatted.filter(Boolean), { status: 200 });
   } catch (error) {
     console.error("❌ Error fetching latest draws:", error);
     return NextResponse.json(

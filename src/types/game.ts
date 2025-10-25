@@ -31,6 +31,12 @@ export interface Draw {
   updatedAt: string;
 }
 
+export type DisplayStatus =
+  | "UPCOMING"
+  | "COMPLETED"
+  | "TODAY"
+  | "AWAITING_RESULTS";
+
 export interface LatestDraw {
   gameId: string;
   gameName: string;
@@ -38,7 +44,8 @@ export interface LatestDraw {
   drawNumber: number;
   drawDate: string;
   jackpotAmountCents?: number | null;
-  status: "UPCOMING" | "COMPLETED";
   winningMainNumbers: number[];
   winningSpecialNumbers: number[];
+  dbStatus: "UPCOMING" | "COMPLETED";
+  displayStatus: DisplayStatus;
 }

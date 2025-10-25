@@ -5,11 +5,13 @@ const prisma = new PrismaClient();
 
 export async function GET(
   request: Request,
-  { params }: { params: { gameId: string } }
+  context: { params: Promise<{ gameId: string }> }
 ) {
   try {
+    const { gameId } = await context.params;
+
     const draws = await prisma.draw.findMany({
-      where: { gameId: params.gameId },
+      where: { gameId },
       orderBy: { drawDate: "desc" },
       select: {
         id: true,
