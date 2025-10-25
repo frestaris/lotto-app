@@ -7,7 +7,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// User models
+// ========================================
+// USER MODELS
+// ========================================
 
 model User {
   id            String    @id @default(cuid())
@@ -21,6 +23,10 @@ model User {
   accounts      Account[]
   sessions      Session[]
   tickets       Ticket[]
+
+  // Wallet system
+  creditCents       Int                   @default(0) 
+  transactions      WalletTransaction[]  
 }
 
 model Account {
@@ -57,7 +63,22 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-// Lotto Game Models
+// 🆕 Wallet transaction log
+model WalletTransaction {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String   // "CREDIT" | "DEBIT"
+  amountCents Int
+  reference   String?  // drawId, ticketId, etc.
+  description String?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+
+// ========================================
+// LOTTO MODELS
+// ========================================
 
 model Game {
   id               String   @id @default(cuid())
@@ -66,13 +87,13 @@ model Game {
   description      String?
   logoUrl          String?
   priceCents       Int      @default(200) // e.g., $2.00
-  mainPickCount    Int // how many numbers user picks (e.g., 6)
+  mainPickCount    Int
   mainRangeMin     Int      @default(1)
-  mainRangeMax     Int // range maximum (e.g., 60)
+  mainRangeMax     Int
   specialPickCount Int      @default(0)
   specialRangeMin  Int?
   specialRangeMax  Int?
-  drawFrequency    String? // e.g., "Thursday" or "Tue & Thu"
+  drawFrequency    String?
   jackpotCurrency  String   @default("AUD")
   isActive         Boolean  @default(true)
   createdAt        DateTime @default(now())
@@ -81,7 +102,15 @@ model Game {
   draws   Draw[]
   tickets Ticket[]
   prizes  PrizeTier[]
+
+  // Jackpot and division config
+  baseJackpotCents  Int      @default(500000000) 
+  jackpotGrowthPct  Float    @default(0.6)       
+  prizeDivisions    Json?    
+  currentJackpotCents  Int      @default(0)
+                  
 }
+
 
 enum DrawStatus {
   UPCOMING
@@ -102,8 +131,12 @@ model Draw {
   updatedAt             DateTime    @updatedAt
 
   tickets Ticket[]
-}
 
+  // Jackpot growth tracking
+  jackpotCents      Int       @default(0)
+  totalSalesCents   Int       @default(0)
+  winnersCount      Int?      
+}
 
 enum TicketStatus {
   PENDING
@@ -120,7 +153,7 @@ model Ticket {
   specialNumbers Int[]
   priceCents     Int
   status         TicketStatus  @default(PENDING)
-  payoutCents    Int?
+  payoutCents    Int?          @default(0) 
   createdAt      DateTime      @default(now())
 
   user User @relation(fields: [userId], references: [id])
@@ -129,8 +162,6 @@ model Ticket {
 
   @@index([gameId, status])
 }
-
-
 
 model PrizeTier {
   id           String @id @default(cuid())

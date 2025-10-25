@@ -45,33 +45,86 @@ async function runDueDrawsForGame(game: Game) {
       where: { drawId: draw.id, status: TicketStatus.PENDING },
     });
 
+    // 🧮 Phase 3 — Prize division + wallet crediting
+    const divisions =
+      (game.prizeDivisions as
+        | {
+            matchMain: number;
+            matchSpecial?: number;
+            percentage?: number;
+            fixed?: number;
+            type: string;
+          }[]
+        | null) ?? null;
+
     for (const ticket of tickets) {
       const mainMatches = ticket.numbers.filter((n) =>
         winningMainNumbers.includes(n)
       ).length;
-
       const specialMatches = ticket.specialNumbers.filter((n) =>
         winningSpecialNumbers.includes(n)
       ).length;
 
-      const won =
-        mainMatches === game.mainPickCount &&
-        specialMatches === game.specialPickCount;
+      let payoutCents = 0;
+      let result: TicketStatus = TicketStatus.LOST;
+
+      if (divisions && divisions.length > 0) {
+        // check for matching division rule
+        for (const rule of divisions) {
+          const mainOk = mainMatches === rule.matchMain;
+          const specialOk = (specialMatches ?? 0) === (rule.matchSpecial ?? 0);
+
+          if (mainOk && specialOk) {
+            payoutCents = rule.fixed
+              ? rule.fixed
+              : Math.floor(
+                  (draw.jackpotCents || game.baseJackpotCents) *
+                    (rule.percentage ?? 0)
+                );
+            result = TicketStatus.WON;
+            break;
+          }
+        }
+      } else {
+        // fallback: only exact match wins jackpot
+        const fullMatch =
+          mainMatches === game.mainPickCount &&
+          specialMatches === game.specialPickCount;
+        if (fullMatch) {
+          payoutCents = draw.jackpotCents || game.baseJackpotCents;
+          result = TicketStatus.WON;
+        }
+      }
 
       await prisma.ticket.update({
         where: { id: ticket.id },
-        data: {
-          status: won ? TicketStatus.WON : TicketStatus.LOST,
-          payoutCents: won ? game.priceCents * 100 : 0,
-        },
+        data: { status: result, payoutCents },
       });
+
+      // 💳 Credit wallet and log transaction
+      if (result === TicketStatus.WON && payoutCents > 0) {
+        await prisma.user.update({
+          where: { id: ticket.userId },
+          data: { creditCents: { increment: payoutCents } },
+        });
+
+        await prisma.walletTransaction.create({
+          data: {
+            userId: ticket.userId,
+            type: "CREDIT",
+            amountCents: payoutCents,
+            reference: draw.id,
+            description: `Prize payout for draw #${draw.drawNumber} (${game.name})`,
+          },
+        });
+      }
 
       console.log(
         `🎟️ Ticket ${ticket.id} → ${
-          won ? "🏆 WON!" : "❌ LOST"
-        } | main: ${mainMatches}/${
+          result === TicketStatus.WON ? "🏆 WON" : "❌ LOST"
+        } | main ${mainMatches}/${
           game.mainPickCount
-        }, special: ${specialMatches}/${game.specialPickCount}`
+        }, special ${specialMatches}/${game.specialPickCount}`
       );
     }
 
@@ -87,8 +140,46 @@ async function runDueDrawsForGame(game: Game) {
 
     console.log(`🎉 Completed draw ${draw.drawNumber} for ${game.name}`);
 
-    // 5️⃣ Ensure next upcoming draw exists
+    // 🧮 Phase 4 — Jackpot rollover / reset
+    const winnerCount = await prisma.ticket.count({
+      where: { drawId: draw.id, status: TicketStatus.WON },
+    });
+
+    let nextJackpot = 0;
+    if (winnerCount > 0) {
+      // winners → reset jackpot
+      nextJackpot = game.baseJackpotCents;
+    } else {
+      // no winners → roll over and grow
+      nextJackpot =
+        (draw.jackpotCents || game.baseJackpotCents) +
+        Math.floor(draw.totalSalesCents * game.jackpotGrowthPct);
+    }
+
+    await prisma.draw.update({
+      where: { id: draw.id },
+      data: { winnersCount: winnerCount },
+    });
+
+    // ensure a next draw exists
     await ensureNextDrawExists(game, draw);
+
+    // update next draw jackpot
+    const nextDraw = await prisma.draw.findFirst({
+      where: { gameId: game.id, status: "UPCOMING" },
+      orderBy: { drawDate: "asc" },
+    });
+
+    if (nextDraw) {
+      await prisma.draw.update({
+        where: { id: nextDraw.id },
+        data: { jackpotCents: nextJackpot },
+      });
+      await prisma.game.update({
+        where: { id: game.id },
+        data: { currentJackpotCents: nextJackpot },
+      });
+    }
   }
 }
 

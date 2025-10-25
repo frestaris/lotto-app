@@ -49,6 +49,11 @@ export async function POST(req: Request) {
         priceCents,
       },
     });
+    // 3️⃣ Increment total sales for the draw (for jackpot growth)
+    await prisma.draw.update({
+      where: { id: upcomingDraw.id },
+      data: { totalSalesCents: { increment: priceCents } },
+    });
 
     return NextResponse.json(ticket, { status: 201 });
   } catch (err) {

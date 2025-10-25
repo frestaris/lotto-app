@@ -16,6 +16,7 @@ export interface Game {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  currentJackpotCents?: number | null;
 }
 
 export interface Draw {

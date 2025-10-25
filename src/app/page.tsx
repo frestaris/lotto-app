@@ -68,8 +68,23 @@ export default function HomePage() {
               <h2 className="text-xl font-semibold group-hover:text-yellow-400">
                 {game.name}
               </h2>
+
+              {/* Draw frequency */}
               <p className="text-sm text-gray-400">{game.drawFrequency}</p>
-              <p className="text-lg font-medium text-yellow-400">
+
+              {/* Current Jackpot */}
+              {game.currentJackpotCents && (
+                <p className="text-lg font-bold text-yellow-400">
+                  $
+                  {(game.currentJackpotCents / 100).toLocaleString(undefined, {
+                    currency: game.jackpotCurrency || "AUD",
+                    maximumFractionDigits: 0,
+                  })}
+                </p>
+              )}
+
+              {/* Ticket price */}
+              <p className="text-sm text-gray-400">
                 ${(game.priceCents / 100).toFixed(2)} per ticket
               </p>
             </div>

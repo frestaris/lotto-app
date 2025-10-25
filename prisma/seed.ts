@@ -21,6 +21,18 @@ async function main() {
       specialRangeMin: 1,
       specialRangeMax: 10,
       drawFrequency: "Thursday 8 PM",
+
+      // Jackpot + divisions
+      baseJackpotCents: 1000000000, // $10,000,000
+      jackpotGrowthPct: 0.6,
+      prizeDivisions: [
+        { matchMain: 5, matchSpecial: 1, type: "Jackpot", percentage: 0.7 },
+        { matchMain: 5, matchSpecial: 0, type: "Division 2", percentage: 0.1 },
+        { matchMain: 4, matchSpecial: 1, type: "Division 3", percentage: 0.08 },
+        { matchMain: 4, matchSpecial: 0, type: "Division 4", percentage: 0.06 },
+        { matchMain: 3, matchSpecial: 1, type: "Division 5", percentage: 0.04 },
+        { matchMain: 3, matchSpecial: 0, type: "Division 6", fixed: 5000 },
+      ],
     },
   });
 
@@ -39,6 +51,15 @@ async function main() {
       mainRangeMax: 45,
       specialPickCount: 0,
       drawFrequency: "Tuesday 8 PM",
+
+      baseJackpotCents: 500000000, // $5,000,000
+      jackpotGrowthPct: 0.5,
+      prizeDivisions: [
+        { matchMain: 7, type: "Jackpot", percentage: 0.7 },
+        { matchMain: 6, type: "Division 2", percentage: 0.15 },
+        { matchMain: 5, type: "Division 3", percentage: 0.1 },
+        { matchMain: 4, type: "Division 4", percentage: 0.05 },
+      ],
     },
   });
 
@@ -57,6 +78,15 @@ async function main() {
       mainRangeMax: 44,
       specialPickCount: 0,
       drawFrequency: "Daily 9 PM",
+
+      baseJackpotCents: 200000000, // $2,000,000
+      jackpotGrowthPct: 0.4,
+      prizeDivisions: [
+        { matchMain: 7, type: "Top Prize", percentage: 0.5 },
+        { matchMain: 6, type: "Division 2", percentage: 0.2 },
+        { matchMain: 5, type: "Division 3", fixed: 10000 },
+        { matchMain: 4, type: "Division 4", fixed: 1000 },
+      ],
     },
   });
 
@@ -76,6 +106,15 @@ async function main() {
       mainRangeMax: 45,
       specialPickCount: 0,
       drawFrequency: "Saturday 8 PM",
+
+      baseJackpotCents: 300000000, // $3,000,000
+      jackpotGrowthPct: 0.5,
+      prizeDivisions: [
+        { matchMain: 6, type: "Jackpot", percentage: 0.7 },
+        { matchMain: 5, type: "Division 2", percentage: 0.15 },
+        { matchMain: 4, type: "Division 3", percentage: 0.1 },
+        { matchMain: 3, type: "Division 4", fixed: 1000 },
+      ],
     },
   });
 
@@ -85,14 +124,15 @@ async function main() {
   for (const game of games) {
     await prisma.draw.deleteMany({ where: { gameId: game.id } });
 
-    // generate future draw dates dynamically using your util
     const drawDates = getNextDrawDates(game.drawFrequency ?? "Daily 9 PM", 6);
 
     const draws = drawDates.map((date, i) => ({
       gameId: game.id,
       drawNumber: i + 1,
-      drawDate: date, // correct per game frequency
-      jackpotAmountCents: 8_000_000_00 + i * 500_000_00,
+      drawDate: date,
+      jackpotAmountCents: game.baseJackpotCents + i * 500_000_00,
+      jackpotCents: game.baseJackpotCents,
+      totalSalesCents: 0,
       status: DrawStatus.UPCOMING,
       winningMainNumbers: [],
       winningSpecialNumbers: [],
