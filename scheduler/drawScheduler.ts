@@ -4,6 +4,7 @@ import { PrismaClient, TicketStatus, type Game } from "@prisma/client";
 import dotenv from "dotenv";
 import { generateNumbers } from "../src/utils/generateNumbers.ts";
 import { getCronExpression } from "../src/utils/getCronExpression.ts";
+import { sendWinEmail } from "../src/utils/sendWinEmail.ts";
 
 dotenv.config({ path: "../.env" });
 
@@ -117,6 +118,17 @@ async function runDueDrawsForGame(game: Game) {
             description: `Prize payout for draw #${draw.drawNumber} (${game.name})`,
           },
         });
+        const user = await prisma.user.findUnique({
+          where: { id: ticket.userId },
+          select: { email: true },
+        });
+
+        if (user?.email) {
+          // fire and forget — no need to block the loop
+          sendWinEmail(user.email, game.name, payoutCents).catch((err) =>
+            console.error("❌ Failed to send win email:", err)
+          );
+        }
       }
 
       console.log(
