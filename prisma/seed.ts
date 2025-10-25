@@ -130,7 +130,6 @@ async function main() {
       gameId: game.id,
       drawNumber: i + 1,
       drawDate: date,
-      jackpotAmountCents: game.baseJackpotCents + i * 500_000_00,
       jackpotCents: game.baseJackpotCents,
       totalSalesCents: 0,
       status: DrawStatus.UPCOMING,

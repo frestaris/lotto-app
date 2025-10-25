@@ -1,10 +1,12 @@
 import cron from "node-cron";
-import { PrismaClient, TicketStatus, type Game } from "@prisma/client";
+import { PrismaClient, TicketStatus } from "@prisma/client";
 
 import dotenv from "dotenv";
 import { generateNumbers } from "../src/utils/generateNumbers.ts";
 import { getCronExpression } from "../src/utils/getCronExpression.ts";
 import { sendWinEmail } from "../src/utils/sendWinEmail.ts";
+
+import type { SchedulerGame, SchedulerDraw } from "./types";
 
 dotenv.config({ path: "../.env" });
 
@@ -13,7 +15,7 @@ const prisma = new PrismaClient();
 /**
  * 🔁 Run all draws that are due (time reached & still UPCOMING)
  */
-async function runDueDrawsForGame(game: Game) {
+async function runDueDrawsForGame(game: SchedulerGame) {
   const now = new Date();
 
   // 1️⃣ Find all draws whose drawDate <= now and are still UPCOMING
@@ -76,12 +78,12 @@ async function runDueDrawsForGame(game: Game) {
           const specialOk = (specialMatches ?? 0) === (rule.matchSpecial ?? 0);
 
           if (mainOk && specialOk) {
+            const safeJackpot = draw.jackpotCents ?? game.baseJackpotCents ?? 0;
+
             payoutCents = rule.fixed
               ? rule.fixed
-              : Math.floor(
-                  (draw.jackpotCents || game.baseJackpotCents) *
-                    (rule.percentage ?? 0)
-                );
+              : Math.floor(safeJackpot * (rule.percentage ?? 0));
+
             result = TicketStatus.WON;
             break;
           }
@@ -92,7 +94,7 @@ async function runDueDrawsForGame(game: Game) {
           mainMatches === game.mainPickCount &&
           specialMatches === game.specialPickCount;
         if (fullMatch) {
-          payoutCents = draw.jackpotCents || game.baseJackpotCents;
+          payoutCents = draw.jackpotCents ?? game.baseJackpotCents ?? 0;
           result = TicketStatus.WON;
         }
       }
@@ -160,12 +162,12 @@ async function runDueDrawsForGame(game: Game) {
     let nextJackpot = 0;
     if (winnerCount > 0) {
       // winners → reset jackpot
-      nextJackpot = game.baseJackpotCents;
+      nextJackpot = game.baseJackpotCents ?? 0;
     } else {
       // no winners → roll over and grow
       nextJackpot =
-        (draw.jackpotCents || game.baseJackpotCents) +
-        Math.floor(draw.totalSalesCents * game.jackpotGrowthPct);
+        (draw.jackpotCents ?? game.baseJackpotCents ?? 0) +
+        draw.totalSalesCents;
     }
 
     await prisma.draw.update({
@@ -174,7 +176,7 @@ async function runDueDrawsForGame(game: Game) {
     });
 
     // ensure a next draw exists
-    await ensureNextDrawExists(game, draw);
+    await ensureNextDrawExists(game, draw, 6);
 
     // update next draw jackpot
     const nextDraw = await prisma.draw.findFirst({
@@ -240,37 +242,52 @@ function getNextDrawDate(drawFrequency: string, fromDate: Date): Date {
 }
 
 /**
- * 🗓️ Ensures there is always at least one upcoming draw for each game
+ * 🗓️ Ensures there are always N upcoming draws for each game
  */
 async function ensureNextDrawExists(
-  game: Game,
-  lastDraw: { drawDate: Date; drawNumber: number }
+  game: SchedulerGame,
+  lastDraw: { drawDate: Date; drawNumber: number },
+  count: number = 6
 ) {
-  const existing = await prisma.draw.findFirst({
-    where: { gameId: game.id, drawDate: { gt: lastDraw.drawDate } },
+  // get all current upcoming draws
+  const upcoming: SchedulerDraw[] = await prisma.draw.findMany({
+    where: { gameId: game.id, status: "UPCOMING" },
+    orderBy: { drawNumber: "asc" },
   });
 
-  if (existing) return; // upcoming draw already exists
+  // track the most recent date/number
+  let latestDate = lastDraw.drawDate;
+  let latestNumber = lastDraw.drawNumber;
 
-  const nextDate = getNextDrawDate(
-    game.drawFrequency ?? "Saturday 8 PM",
-    lastDraw.drawDate
-  );
+  // while less than desired upcoming draws, add new ones
+  while (upcoming.length < count) {
+    const nextDate = getNextDrawDate(
+      game.drawFrequency ?? "Saturday 8 PM",
+      latestDate
+    );
 
-  await prisma.draw.create({
-    data: {
-      gameId: game.id,
-      drawNumber: lastDraw.drawNumber + 1,
-      drawDate: nextDate,
-      winningMainNumbers: [],
-      winningSpecialNumbers: [],
-      status: "UPCOMING",
-    },
-  });
+    const newDraw = await prisma.draw.create({
+      data: {
+        gameId: game.id,
+        drawNumber: ++latestNumber,
+        drawDate: nextDate,
+        winningMainNumbers: [],
+        winningSpecialNumbers: [],
+        status: "UPCOMING",
+        jackpotCents: game.currentJackpotCents ?? game.baseJackpotCents ?? 0,
+      },
+    });
 
-  console.log(
-    `📅 Created next draw for ${game.name} → ${nextDate.toISOString()}`
-  );
+    console.log(
+      `📅 Created next draw #${latestNumber} for ${
+        game.name
+      } → ${nextDate.toISOString()}`
+    );
+
+    // ✅ Push with correct type, no any
+    upcoming.push(newDraw);
+    latestDate = nextDate;
+  }
 }
 
 /**
@@ -280,7 +297,17 @@ async function scheduleAllGames() {
   const games = await prisma.game.findMany();
   console.log(`🎯 Loaded ${games.length} games for scheduling.`);
 
-  for (const game of games) {
+  for (const rawGame of games) {
+    // ✅ Safely parse prizeDivisions JSON into real array
+    const game: SchedulerGame = {
+      ...rawGame,
+      prizeDivisions: rawGame.prizeDivisions
+        ? (JSON.parse(
+            rawGame.prizeDivisions as unknown as string
+          ) as SchedulerGame["prizeDivisions"])
+        : null,
+    };
+
     const cronExpr = getCronExpression(game.drawFrequency ?? "daily 9 PM");
 
     // Run every time the cron triggers (weekly/daily)
@@ -314,6 +341,7 @@ async function scheduleAllGames() {
           winningMainNumbers: [],
           winningSpecialNumbers: [],
           status: "UPCOMING",
+          jackpotCents: game.currentJackpotCents ?? game.baseJackpotCents ?? 0,
         },
       });
 
@@ -323,7 +351,7 @@ async function scheduleAllGames() {
         } → ${firstDrawDate.toISOString()}`
       );
     } else {
-      await ensureNextDrawExists(game, latestDraw);
+      await ensureNextDrawExists(game, latestDraw, 6);
     }
   }
 }

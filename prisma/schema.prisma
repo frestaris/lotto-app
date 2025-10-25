@@ -125,7 +125,6 @@ model Draw {
   drawDate              DateTime
   winningMainNumbers    Int[]
   winningSpecialNumbers Int[]
-  jackpotAmountCents    Int?
   status                DrawStatus  @default(UPCOMING)
   createdAt             DateTime    @default(now())
   updatedAt             DateTime    @updatedAt

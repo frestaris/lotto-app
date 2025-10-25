@@ -65,7 +65,10 @@ export default function GameHeader({
   );
 
   const jackpotAmount = `$${(
-    (currentDraw.jackpotAmountCents ?? 800000000) / 100
+    (currentDraw?.jackpotCents ??
+      game.currentJackpotCents ??
+      game.baseJackpotCents ??
+      0) / 100
   ).toLocaleString()}`;
 
   return (
@@ -155,10 +158,14 @@ export default function GameHeader({
                           year: "numeric",
                         })}
                       </p>
+
                       <p className="text-yellow-400 text-sm">
                         Jackpot: $
                         {(
-                          (d.jackpotAmountCents ?? 800000000) / 100
+                          (d.jackpotCents ??
+                            game.currentJackpotCents ??
+                            game.baseJackpotCents ??
+                            0) / 100
                         ).toLocaleString()}
                       </p>
                     </div>

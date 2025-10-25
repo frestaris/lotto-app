@@ -1,4 +1,4 @@
-export interface Game {
+export type SchedulerGame = {
   id: string;
   slug: string;
   name: string;
@@ -14,8 +14,8 @@ export interface Game {
   drawFrequency?: string | null;
   jackpotCurrency?: string | null;
   isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date;
+  updatedAt: Date;
   currentJackpotCents?: number | null;
   baseJackpotCents?: number | null;
   prizeDivisions?:
@@ -27,36 +27,19 @@ export interface Game {
         type: string;
       }[]
     | null;
-}
+};
 
-export interface Draw {
+export type SchedulerDraw = {
   id: string;
   gameId: string;
   drawNumber: number;
-  drawDate: string;
+  drawDate: Date; // ✅ Prisma returns Date, not string
   jackpotCents: number | null;
   status: "UPCOMING" | "COMPLETED";
   winningMainNumbers: number[];
   winningSpecialNumbers: number[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-export type DisplayStatus =
-  | "UPCOMING"
-  | "COMPLETED"
-  | "TODAY"
-  | "AWAITING_RESULTS";
-
-export interface LatestDraw {
-  gameId: string;
-  gameName: string;
-  logoUrl: string | null;
-  drawNumber: number;
-  drawDate: string;
-  jackpotCents?: number | null;
-  winningMainNumbers: number[];
-  winningSpecialNumbers: number[];
-  dbStatus: "UPCOMING" | "COMPLETED";
-  displayStatus: DisplayStatus;
-}
+  createdAt: Date;
+  updatedAt: Date;
+  totalSalesCents: number;
+  winnersCount: number | null;
+};

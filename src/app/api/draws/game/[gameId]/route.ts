@@ -18,7 +18,7 @@ export async function GET(
         drawNumber: true,
         drawDate: true,
         status: true,
-        jackpotAmountCents: true,
+        jackpotCents: true,
         winningMainNumbers: true,
         winningSpecialNumbers: true,
         createdAt: true,
