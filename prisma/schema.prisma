@@ -101,7 +101,6 @@ model Game {
 
   draws   Draw[]
   tickets Ticket[]
-  prizes  PrizeTier[]
 
   // Jackpot and division config
   baseJackpotCents  Int      @default(500000000) 
@@ -125,6 +124,7 @@ model Draw {
   drawDate              DateTime
   winningMainNumbers    Int[]
   winningSpecialNumbers Int[]
+  totalPayoutCents Int @default(0)
   status                DrawStatus  @default(UPCOMING)
   createdAt             DateTime    @default(now())
   updatedAt             DateTime    @updatedAt
@@ -134,7 +134,10 @@ model Draw {
   // Jackpot growth tracking
   jackpotCents      Int       @default(0)
   totalSalesCents   Int       @default(0)
-  winnersCount      Int?      
+  winnersCount      Int?    
+
+  divisionResults Json?
+  
 }
 
 enum TicketStatus {
@@ -160,13 +163,4 @@ model Ticket {
   draw Draw @relation(fields: [drawId], references: [id], onDelete: Cascade)
 
   @@index([gameId, status])
-}
-
-model PrizeTier {
-  id           String @id @default(cuid())
-  gameId       String
-  game         Game   @relation(fields: [gameId], references: [id])
-  matchMain    Int
-  matchSpecial Int
-  payoutCents  Int
 }

@@ -1,8 +1,10 @@
 "use client";
+
 import { useParams } from "next/navigation";
 import {
   useGetGameBySlugQuery,
   useGetDrawsByGameIdQuery,
+  useGetTicketsByDrawIdQuery,
 } from "@/redux/slices/gameApi";
 import { useState, useEffect } from "react";
 import Image from "next/image";
@@ -16,31 +18,37 @@ export default function GameResultsPage() {
   });
 
   const [selectedDraw, setSelectedDraw] = useState<Draw | null>(null);
+  const drawId = selectedDraw?.id ?? "";
+  const skipTickets = !selectedDraw?.id;
 
+  const { data: ticketsData } = useGetTicketsByDrawIdQuery(drawId, {
+    skip: skipTickets,
+  });
+  const divisionResults = ticketsData?.divisionResults ?? [];
+
+  // 🧭 Choose the most recent completed draw or next upcoming one
   useEffect(() => {
     if (draws.length) {
-      // 🗓️ Sort by date ascending to normalize order
       const sorted = [...draws].sort(
         (a, b) =>
           new Date(a.drawDate).getTime() - new Date(b.drawDate).getTime()
       );
 
       const now = new Date();
-
-      // ✅ Find most recent completed or next upcoming
       const mostRecentCompleted =
         sorted
           .filter(
             (d) => d.status === "COMPLETED" && new Date(d.drawDate) <= now
           )
-          .at(-1) || // last completed
-        sorted.find((d) => new Date(d.drawDate) >= now) || // next upcoming
+          .at(-1) ||
+        sorted.find((d) => new Date(d.drawDate) >= now) ||
         sorted[0];
 
       setSelectedDraw(mostRecentCompleted);
     }
   }, [draws]);
 
+  // ⏳ Handle loading state
   if (!game || !selectedDraw)
     return <div className="text-gray-400 text-center py-10">Loading...</div>;
 
@@ -55,9 +63,11 @@ export default function GameResultsPage() {
     }
   );
 
+  const jackpot = selectedDraw.jackpotCents ?? game.currentJackpotCents ?? 0;
+
   return (
     <div className="max-w-4xl mx-auto py-10 text-white">
-      {/* Header */}
+      {/* 🎯 Header */}
       <div className="text-center mb-8">
         <Image
           src={game.logoUrl ?? "/images/default-logo.png"}
@@ -71,11 +81,15 @@ export default function GameResultsPage() {
         <h1 className="text-3xl font-bold text-yellow-400 mt-4">{game.name}</h1>
 
         <p className="text-gray-400">
-          Draw {selectedDraw.drawNumber} — {formattedDate}{" "}
+          Draw {selectedDraw.drawNumber} — {formattedDate}
+          <br />
+          <span className="text-yellow-400 font-semibold">
+            Jackpot: ${Math.round(jackpot / 100).toLocaleString()}
+          </span>
         </p>
       </div>
 
-      {/* Winning Numbers */}
+      {/* 🏆 Winning Numbers */}
       {!isUpcoming ? (
         <div className="flex justify-center flex-wrap gap-2 mb-8">
           {selectedDraw.winningMainNumbers.map((n, i) => (
@@ -86,9 +100,11 @@ export default function GameResultsPage() {
               {n}
             </div>
           ))}
+
           {selectedDraw.winningSpecialNumbers.length > 0 && (
             <span className="text-yellow-400 font-semibold px-3">+</span>
           )}
+
           {selectedDraw.winningSpecialNumbers.map((n, i) => (
             <div
               key={i}
@@ -99,14 +115,70 @@ export default function GameResultsPage() {
           ))}
         </div>
       ) : (
-        // 🕒 If no draws completed yet
         <div className="text-center text-gray-400 mb-10">
           Results will appear here after the draw!
         </div>
       )}
 
-      {/* Dropdown for past draws */}
-      <div className="text-center">
+      {/* 🧮 Division Prizes */}
+      {game.prizeDivisions && (
+        <div className="max-w-3xl mx-auto mt-8 border border-white/10 rounded-lg overflow-hidden">
+          <table className="w-full text-sm text-gray-300">
+            <thead className="bg-white/10 text-yellow-400 uppercase text-xs">
+              <tr>
+                <th className="px-4 py-2 text-left">Division</th>
+                <th className="px-4 py-2 text-center">Match</th>
+                <th className="px-4 py-2 text-center">Prize Pool</th>
+                <th className="px-4 py-2 text-center">Winners</th>
+                <th className="px-4 py-2 text-center">Each</th>
+              </tr>
+            </thead>
+            <tbody>
+              {game.prizeDivisions.map((div, i) => {
+                const result =
+                  divisionResults.find((r) => r.type === div.type) ?? null;
+
+                const pool =
+                  result?.poolCents ??
+                  (div.fixed
+                    ? div.fixed
+                    : Math.floor(jackpot * (div.percentage ?? 0))) ??
+                  0;
+
+                const winners = result?.winnersCount ?? 0;
+                const each =
+                  result?.eachCents ??
+                  (winners > 0 ? Math.floor(pool / winners) : 0);
+
+                return (
+                  <tr
+                    key={i}
+                    className="border-t border-white/10 hover:bg-white/5 transition"
+                  >
+                    <td className="px-4 py-2 font-semibold">{div.type}</td>
+                    <td className="px-4 py-2 text-center">
+                      {div.matchMain} main
+                      {div.matchSpecial ? ` + ${div.matchSpecial} special` : ""}
+                    </td>
+                    <td className="px-4 py-2 text-center text-green-400">
+                      ${Math.round(pool / 100).toLocaleString()}
+                    </td>
+                    <td className="px-4 py-2 text-center text-yellow-400 font-semibold">
+                      {winners}
+                    </td>
+                    <td className="px-4 py-2 text-center text-blue-400">
+                      {each > 0 ? `$${(each / 100).toLocaleString()}` : "-"}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* 🗓️ Past Draws Dropdown */}
+      <div className="text-center mt-10">
         <label
           htmlFor="pastDraws"
           className="block text-sm text-gray-400 mb-2 uppercase tracking-wider"
@@ -122,7 +194,7 @@ export default function GameResultsPage() {
           }}
           className="bg-black border border-white/10 rounded-md px-3 py-2 text-sm text-gray-300"
         >
-          {draws
+          {[...draws]
             .filter((d) => d.status === "COMPLETED")
             .sort(
               (a, b) =>

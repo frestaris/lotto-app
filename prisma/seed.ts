@@ -1,9 +1,10 @@
 import { getNextDrawDates } from "../src/utils/getNextDrawDates.ts";
 import { PrismaClient, DrawStatus } from "@prisma/client";
+
 const prisma = new PrismaClient();
 
 async function main() {
-  // 🎯 Powerball
+  // 🎯 POWERBALL
   const powerball = await prisma.game.upsert({
     where: { slug: "powerball" },
     update: {},
@@ -21,22 +22,22 @@ async function main() {
       specialRangeMin: 1,
       specialRangeMax: 10,
       drawFrequency: "Thursday 8 PM",
-
-      // Jackpot + divisions
       baseJackpotCents: 1000000000, // $10,000,000
       jackpotGrowthPct: 0.6,
+
+      // ✅ Jackpot is full payout (1.0)
       prizeDivisions: [
-        { matchMain: 5, matchSpecial: 1, type: "Jackpot", percentage: 0.7 },
-        { matchMain: 5, matchSpecial: 0, type: "Division 2", percentage: 0.1 },
-        { matchMain: 4, matchSpecial: 1, type: "Division 3", percentage: 0.08 },
-        { matchMain: 4, matchSpecial: 0, type: "Division 4", percentage: 0.06 },
-        { matchMain: 3, matchSpecial: 1, type: "Division 5", percentage: 0.04 },
-        { matchMain: 3, matchSpecial: 0, type: "Division 6", fixed: 5000 },
+        { type: "Jackpot", matchMain: 5, matchSpecial: 1, percentage: 1.0 },
+        { type: "Division 2", matchMain: 5, matchSpecial: 0, fixed: 10000000 },
+        { type: "Division 3", matchMain: 4, matchSpecial: 1, fixed: 500000 },
+        { type: "Division 4", matchMain: 4, matchSpecial: 0, fixed: 50000 },
+        { type: "Division 5", matchMain: 3, matchSpecial: 1, fixed: 5000 },
+        { type: "Division 6", matchMain: 3, matchSpecial: 0, fixed: 500 },
       ],
     },
   });
 
-  // 💫 Oz Lotto
+  // 💫 OZ LOTTO
   const ozLotto = await prisma.game.upsert({
     where: { slug: "oz-lotto" },
     update: {},
@@ -51,19 +52,19 @@ async function main() {
       mainRangeMax: 45,
       specialPickCount: 0,
       drawFrequency: "Tuesday 8 PM",
-
       baseJackpotCents: 500000000, // $5,000,000
       jackpotGrowthPct: 0.5,
+
       prizeDivisions: [
-        { matchMain: 7, type: "Jackpot", percentage: 0.7 },
-        { matchMain: 6, type: "Division 2", percentage: 0.15 },
-        { matchMain: 5, type: "Division 3", percentage: 0.1 },
-        { matchMain: 4, type: "Division 4", percentage: 0.05 },
+        { type: "Jackpot", matchMain: 7, percentage: 1.0 },
+        { type: "Division 2", matchMain: 6, fixed: 5000000 },
+        { type: "Division 3", matchMain: 5, fixed: 500000 },
+        { type: "Division 4", matchMain: 4, fixed: 50000 },
       ],
     },
   });
 
-  // 💰 Set for Life
+  // 💰 SET FOR LIFE
   const setForLife = await prisma.game.upsert({
     where: { slug: "set-for-life" },
     update: {},
@@ -78,19 +79,19 @@ async function main() {
       mainRangeMax: 44,
       specialPickCount: 0,
       drawFrequency: "Daily 9 PM",
-
       baseJackpotCents: 200000000, // $2,000,000
       jackpotGrowthPct: 0.4,
+
       prizeDivisions: [
-        { matchMain: 7, type: "Top Prize", percentage: 0.5 },
-        { matchMain: 6, type: "Division 2", percentage: 0.2 },
-        { matchMain: 5, type: "Division 3", fixed: 10000 },
-        { matchMain: 4, type: "Division 4", fixed: 1000 },
+        { type: "Top Prize", matchMain: 7, percentage: 1.0 },
+        { type: "Division 2", matchMain: 6, fixed: 200000 },
+        { type: "Division 3", matchMain: 5, fixed: 10000 },
+        { type: "Division 4", matchMain: 4, fixed: 1000 },
       ],
     },
   });
 
-  // 🎟️ Saturday Lotto
+  // 🎟️ SATURDAY LOTTO
   const saturdayLotto = await prisma.game.upsert({
     where: { slug: "saturday-lotto" },
     update: {},
@@ -106,21 +107,64 @@ async function main() {
       mainRangeMax: 45,
       specialPickCount: 0,
       drawFrequency: "Saturday 8 PM",
-
       baseJackpotCents: 300000000, // $3,000,000
       jackpotGrowthPct: 0.5,
+
       prizeDivisions: [
-        { matchMain: 6, type: "Jackpot", percentage: 0.7 },
-        { matchMain: 5, type: "Division 2", percentage: 0.15 },
-        { matchMain: 4, type: "Division 3", percentage: 0.1 },
-        { matchMain: 3, type: "Division 4", fixed: 1000 },
+        { type: "Jackpot", matchMain: 6, percentage: 1.0 },
+        { type: "Division 2", matchMain: 5, fixed: 100000 },
+        { type: "Division 3", matchMain: 4, fixed: 10000 },
+        { type: "Division 4", matchMain: 3, fixed: 1000 },
       ],
     },
   });
 
-  // 🗓️ Generate draws dynamically based on frequency
-  const games = [powerball, ozLotto, setForLife, saturdayLotto];
+  // const testlotto = await prisma.game.upsert({
+  //   where: { slug: "test-lotto" },
+  //   update: {
+  //     name: "Test Lotto",
+  //     description:
+  //       "A fast lotto game for debugging. Draw runs every 5 minutes.",
+  //     logoUrl: "/images/test-lotto.png",
+  //     priceCents: 200,
+  //     mainPickCount: 3,
+  //     mainRangeMin: 1,
+  //     mainRangeMax: 60, // ✅ will now update existing record
+  //     specialPickCount: 0,
+  //     drawFrequency: "Every 5min",
+  //     baseJackpotCents: 500000,
+  //     jackpotGrowthPct: 0.5,
+  //     prizeDivisions: JSON.stringify([
+  //       { type: "Jackpot", matchMain: 6, percentage: 1.0 },
+  //       { type: "Division 2", matchMain: 2, fixed: 1000 },
+  //       { type: "Division 3", matchMain: 1, fixed: 200 },
+  //     ]),
+  //   },
+  //   create: {
+  //     slug: "test-lotto",
+  //     name: "Test Lotto",
+  //     description:
+  //       "A fast lotto game for debugging. Draw runs every 5 minutes.",
+  //     logoUrl: "/images/test-lotto.png",
+  //     priceCents: 200,
+  //     mainPickCount: 3,
+  //     mainRangeMin: 1,
+  //     mainRangeMax: 60,
+  //     specialPickCount: 0,
+  //     drawFrequency: "Every 5min",
+  //     baseJackpotCents: 500000,
+  //     jackpotGrowthPct: 0.5,
+  //     prizeDivisions: JSON.stringify([
+  //       { type: "Jackpot", matchMain: 3, percentage: 1.0 },
+  //       { type: "Division 2", matchMain: 2, fixed: 1000 },
+  //       { type: "Division 3", matchMain: 1, fixed: 200 },
+  //     ]),
+  //   },
+  // });
 
+  // 🗓️ GENERATE NEXT DRAWS
+  const games = [powerball, ozLotto, setForLife, saturdayLotto];
+  // const games = [testlotto];
   for (const game of games) {
     await prisma.draw.deleteMany({ where: { gameId: game.id } });
 

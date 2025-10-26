@@ -21,11 +21,29 @@ export async function GET(
         jackpotCents: true,
         winningMainNumbers: true,
         winningSpecialNumbers: true,
+        divisionResults: true, // ✅ include division results
         createdAt: true,
       },
     });
 
-    return NextResponse.json(draws, { status: 200 });
+    // ✅ Safely parse divisionResults JSON for all draws
+    const formattedDraws = draws.map((d) => {
+      let divisionResults = null;
+      if (d.divisionResults) {
+        try {
+          divisionResults =
+            typeof d.divisionResults === "string"
+              ? JSON.parse(d.divisionResults)
+              : d.divisionResults;
+        } catch {
+          console.warn(`⚠️ Failed to parse divisionResults for draw ${d.id}`);
+        }
+      }
+
+      return { ...d, divisionResults };
+    });
+
+    return NextResponse.json(formattedDraws, { status: 200 });
   } catch (err) {
     console.error("❌ Error fetching draws:", err);
     return NextResponse.json(

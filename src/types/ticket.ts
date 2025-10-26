@@ -11,6 +11,7 @@ export interface Ticket {
   numbers: number[];
   specialNumbers: number[];
   priceCents: number;
+  payoutCents?: number;
   createdAt: string;
 }
 
@@ -37,4 +38,5 @@ export interface TicketWithRelations extends Ticket {
  */
 export interface UserTicket extends TicketWithRelations {
   result: "WON" | "LOST" | "PENDING";
+  payoutCents: number;
 }

@@ -29,6 +29,19 @@ export interface Game {
     | null;
 }
 
+/**
+ * ✅ Division result for each completed draw
+ */
+export interface DivisionResult {
+  type: string;
+  poolCents: number;
+  winnersCount: number;
+  eachCents: number;
+}
+
+/**
+ * ✅ Updated Draw interface — now includes divisionResults
+ */
 export interface Draw {
   id: string;
   gameId: string;
@@ -40,6 +53,9 @@ export interface Draw {
   winningSpecialNumbers: number[];
   createdAt: string;
   updatedAt: string;
+
+  // 🏆 new backend field
+  divisionResults?: DivisionResult[] | null;
 }
 
 export type DisplayStatus =

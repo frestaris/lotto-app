@@ -12,17 +12,30 @@ export async function GET(
   context: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await context.params;
+
   try {
     const game = await prisma.game.findUnique({
       where: { slug },
-      include: { prizes: true },
     });
 
     if (!game) {
       return NextResponse.json({ error: "Game not found" }, { status: 404 });
     }
 
-    return NextResponse.json(game, { status: 200 });
+    // ✅ Parse prizeDivisions JSON if stored as a string
+    let prizeDivisions = null;
+    if (game.prizeDivisions) {
+      try {
+        prizeDivisions =
+          typeof game.prizeDivisions === "string"
+            ? JSON.parse(game.prizeDivisions)
+            : game.prizeDivisions;
+      } catch {
+        console.warn("⚠️ Failed to parse prizeDivisions JSON");
+      }
+    }
+
+    return NextResponse.json({ ...game, prizeDivisions }, { status: 200 });
   } catch (error) {
     console.error("❌ Error fetching game:", error);
     return NextResponse.json(

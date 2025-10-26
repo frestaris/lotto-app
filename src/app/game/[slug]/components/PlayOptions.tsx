@@ -19,10 +19,11 @@ interface PlayOptionsProps {
 export default function PlayOptions({ game, selectedDraw }: PlayOptionsProps) {
   const [mode, setMode] = useState<"quick" | "custom">("quick");
 
-  // Fallback if user didn't open GameHeader yet
-  const nextAvailableDraw = game.drawFrequency
-    ? getNextDrawDates(game.drawFrequency, 1)[0].toISOString()
-    : null;
+  const nextAvailableDraw = (() => {
+    if (!game.drawFrequency) return null;
+    const nextDates = getNextDrawDates(game.drawFrequency, 1);
+    return nextDates?.[0] ? nextDates[0].toISOString() : null;
+  })();
 
   const dispatch = useAppDispatch();
   const { showToast, Toast } = Toaster();

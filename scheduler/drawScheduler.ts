@@ -18,7 +18,6 @@ const prisma = new PrismaClient();
 async function runDueDrawsForGame(game: SchedulerGame) {
   const now = new Date();
 
-  // 1️⃣ Find all draws whose drawDate <= now and are still UPCOMING
   const dueDraws = await prisma.draw.findMany({
     where: { gameId: game.id, drawDate: { lte: now }, status: "UPCOMING" },
     orderBy: { drawNumber: "asc" },
@@ -27,13 +26,12 @@ async function runDueDrawsForGame(game: SchedulerGame) {
   for (const draw of dueDraws) {
     console.log(`✅ Running Draw #${draw.drawNumber} for ${game.name}`);
 
-    // 2️⃣ Generate winning numbers
+    // 🎲 Generate winning numbers
     const winningMainNumbers = generateNumbers(
       game.mainPickCount,
       game.mainRangeMin,
       game.mainRangeMax
     );
-
     const winningSpecialNumbers =
       game.specialPickCount > 0
         ? generateNumbers(
@@ -43,142 +41,210 @@ async function runDueDrawsForGame(game: SchedulerGame) {
           )
         : [];
 
-    // 3️⃣ Evaluate all tickets attached to this draw
+    // 🎟️ Fetch tickets
     const tickets = await prisma.ticket.findMany({
       where: { drawId: draw.id, status: TicketStatus.PENDING },
     });
 
-    // 🧮 Phase 3 — Prize division + wallet crediting
-    const divisions =
-      (game.prizeDivisions as
-        | {
-            matchMain: number;
-            matchSpecial?: number;
-            percentage?: number;
-            fixed?: number;
-            type: string;
-          }[]
-        | null) ?? null;
+    // 🏆 Parse prize divisions safely
+    let divisions: {
+      matchMain: number;
+      matchSpecial?: number;
+      percentage?: number;
+      fixed?: number;
+      type: string;
+    }[] = [];
 
-    for (const ticket of tickets) {
-      const mainMatches = ticket.numbers.filter((n) =>
+    try {
+      divisions =
+        typeof game.prizeDivisions === "string"
+          ? JSON.parse(game.prizeDivisions)
+          : game.prizeDivisions ?? [];
+    } catch (err) {
+      console.warn("⚠️ Failed to parse prizeDivisions for", game.name, err);
+      divisions = [];
+    }
+
+    // --- Determine winners per division ---
+    const divisionWinnersMap: Record<string, string[]> = {};
+
+    for (const t of tickets) {
+      const mainMatches = t.numbers.filter((n) =>
         winningMainNumbers.includes(n)
       ).length;
-      const specialMatches = ticket.specialNumbers.filter((n) =>
+      const specialMatches = t.specialNumbers.filter((n) =>
         winningSpecialNumbers.includes(n)
       ).length;
 
-      let payoutCents = 0;
-      let result: TicketStatus = TicketStatus.LOST;
+      const matched = divisions.find(
+        (d) =>
+          mainMatches === d.matchMain &&
+          (d.matchSpecial == null || specialMatches === d.matchSpecial)
+      );
 
-      if (divisions && divisions.length > 0) {
-        // check for matching division rule
-        for (const rule of divisions) {
-          const mainOk = mainMatches === rule.matchMain;
-          const specialOk = (specialMatches ?? 0) === (rule.matchSpecial ?? 0);
-
-          if (mainOk && specialOk) {
-            const safeJackpot = draw.jackpotCents ?? game.baseJackpotCents ?? 0;
-
-            payoutCents = rule.fixed
-              ? rule.fixed
-              : Math.floor(safeJackpot * (rule.percentage ?? 0));
-
-            result = TicketStatus.WON;
-            break;
-          }
-        }
-      } else {
-        // fallback: only exact match wins jackpot
-        const fullMatch =
-          mainMatches === game.mainPickCount &&
-          specialMatches === game.specialPickCount;
-        if (fullMatch) {
-          payoutCents = draw.jackpotCents ?? game.baseJackpotCents ?? 0;
-          result = TicketStatus.WON;
-        }
+      if (matched) {
+        if (!divisionWinnersMap[matched.type])
+          divisionWinnersMap[matched.type] = [];
+        divisionWinnersMap[matched.type].push(t.id);
       }
+    }
 
-      await prisma.ticket.update({
-        where: { id: ticket.id },
-        data: { status: result, payoutCents },
-      });
+    // --- Calculate & distribute prizes ---
+    const divisionResults: {
+      type: string;
+      poolCents: number;
+      winnersCount: number;
+      eachCents: number;
+    }[] = [];
 
-      // 💳 Credit wallet and log transaction
-      if (result === TicketStatus.WON && payoutCents > 0) {
+    for (const rule of divisions) {
+      const winners = divisionWinnersMap[rule.type] ?? [];
+      if (winners.length === 0) continue;
+
+      const safeJackpot = draw.jackpotCents ?? game.baseJackpotCents ?? 0;
+      const poolCents = rule.fixed
+        ? rule.fixed
+        : Math.floor(safeJackpot * (rule.percentage ?? 0));
+
+      const payoutPerWinner = Math.floor(poolCents / winners.length);
+
+      for (const ticketId of winners) {
+        const t = tickets.find((tk) => tk.id === ticketId)!;
+
+        await prisma.ticket.update({
+          where: { id: ticketId },
+          data: { status: TicketStatus.WON, payoutCents: payoutPerWinner },
+        });
+        console.log(
+          `🎯 Updated ticket ${ticketId} → payout: $${(
+            payoutPerWinner / 100
+          ).toLocaleString()}`
+        );
+
         await prisma.user.update({
-          where: { id: ticket.userId },
-          data: { creditCents: { increment: payoutCents } },
+          where: { id: t.userId },
+          data: { creditCents: { increment: payoutPerWinner } },
         });
 
         await prisma.walletTransaction.create({
           data: {
-            userId: ticket.userId,
+            userId: t.userId,
             type: "CREDIT",
-            amountCents: payoutCents,
+            amountCents: payoutPerWinner,
             reference: draw.id,
-            description: `Prize payout for draw #${draw.drawNumber} (${game.name})`,
+            description: `Prize payout (${rule.type}) for draw #${draw.drawNumber} (${game.name})`,
           },
         });
+
         const user = await prisma.user.findUnique({
-          where: { id: ticket.userId },
+          where: { id: t.userId },
           select: { email: true },
         });
-
         if (user?.email) {
-          // fire and forget — no need to block the loop
-          sendWinEmail(user.email, game.name, payoutCents).catch((err) =>
+          sendWinEmail(user.email, game.name, payoutPerWinner).catch((err) =>
             console.error("❌ Failed to send win email:", err)
           );
         }
       }
 
+      divisionResults.push({
+        type: rule.type,
+        poolCents,
+        winnersCount: winners.length,
+        eachCents: payoutPerWinner,
+      });
+
       console.log(
-        `🎟️ Ticket ${ticket.id} → ${
-          result === TicketStatus.WON ? "🏆 WON" : "❌ LOST"
-        } | main ${mainMatches}/${
-          game.mainPickCount
-        }, special ${specialMatches}/${game.specialPickCount}`
+        `🏆 ${rule.type}: ${winners.length} winner(s) → each gets $${(
+          payoutPerWinner / 100
+        ).toLocaleString()}`
       );
     }
 
-    // 4️⃣ Mark draw as completed
+    // ❌ Mark all remaining tickets as LOST
+    const allWinnerIds = Object.values(divisionWinnersMap).flat();
+
+    if (allWinnerIds.length > 0) {
+      await prisma.ticket.updateMany({
+        where: {
+          drawId: draw.id,
+          id: { notIn: allWinnerIds },
+        },
+        data: { status: TicketStatus.LOST, payoutCents: 0 },
+      });
+    } else {
+      // if absolutely no winners, mark all as lost
+      await prisma.ticket.updateMany({
+        where: { drawId: draw.id },
+        data: { status: TicketStatus.LOST, payoutCents: 0 },
+      });
+    }
+
+    // ✅ Mark draw complete + store division results
     await prisma.draw.update({
       where: { id: draw.id },
       data: {
         status: "COMPLETED",
         winningMainNumbers,
         winningSpecialNumbers,
+        divisionResults,
+        jackpotCents:
+          draw.jackpotCents ??
+          game.currentJackpotCents ??
+          game.baseJackpotCents ??
+          0,
       },
     });
 
     console.log(`🎉 Completed draw ${draw.drawNumber} for ${game.name}`);
-
-    // 🧮 Phase 4 — Jackpot rollover / reset
+    // 💰 Jackpot rollover / sales / payout logic
     const winnerCount = await prisma.ticket.count({
       where: { drawId: draw.id, status: TicketStatus.WON },
     });
 
+    // 🧮 Calculate total payouts from all divisions
+    const totalPayoutCents = divisionResults.reduce(
+      (sum, d) => sum + d.eachCents * d.winnersCount,
+      0
+    );
+
+    // 💰 Previous jackpot value
+    const prevJackpot = draw.jackpotCents ?? game.baseJackpotCents ?? 0;
+
+    // 🏆 Check if jackpot division (grand prize) was actually won
+    const jackpotDivision = divisionResults.find((d) => d.type === "Jackpot");
+    const jackpotWinners = jackpotDivision?.winnersCount ?? 0;
+
     let nextJackpot = 0;
-    if (winnerCount > 0) {
-      // winners → reset jackpot
+
+    if (jackpotWinners > 0) {
+      // Jackpot was hit → reset to base
       nextJackpot = game.baseJackpotCents ?? 0;
     } else {
-      // no winners → roll over and grow
-      nextJackpot =
-        (draw.jackpotCents ?? game.baseJackpotCents ?? 0) +
-        draw.totalSalesCents;
+      // Jackpot not hit → grow with sales, shrink with payouts
+      nextJackpot = Math.max(
+        prevJackpot + draw.totalSalesCents - totalPayoutCents,
+        0
+      );
     }
 
+    // 🧾 Update DB with next jackpot info
+    await prisma.draw.update({
+      where: { id: draw.id },
+      data: {
+        winnersCount: winnerCount,
+        totalPayoutCents,
+      },
+    });
+
+    // 🧾 Update next draw + game record
     await prisma.draw.update({
       where: { id: draw.id },
       data: { winnersCount: winnerCount },
     });
 
-    // ensure a next draw exists
     await ensureNextDrawExists(game, draw, 6);
 
-    // update next draw jackpot
     const nextDraw = await prisma.draw.findFirst({
       where: { gameId: game.id, status: "UPCOMING" },
       orderBy: { drawDate: "asc" },
@@ -189,11 +255,16 @@ async function runDueDrawsForGame(game: SchedulerGame) {
         where: { id: nextDraw.id },
         data: { jackpotCents: nextJackpot },
       });
+
       await prisma.game.update({
         where: { id: game.id },
         data: { currentJackpotCents: nextJackpot },
       });
     }
+
+    console.log(
+      `💰 Jackpot for next draw: $${(nextJackpot / 100).toLocaleString()}`
+    );
   }
 }
 
@@ -203,6 +274,14 @@ async function runDueDrawsForGame(game: SchedulerGame) {
 function getNextDrawDate(drawFrequency: string, fromDate: Date): Date {
   const next = new Date(fromDate);
   const lower = drawFrequency.toLowerCase();
+
+  // 🟢 Handle very frequent test games (e.g. "Every 5min", "every 10min")
+  const minuteMatch = lower.match(/every\s*(\d+)\s*min/);
+  if (minuteMatch) {
+    const minutes = parseInt(minuteMatch[1], 10);
+    next.setMinutes(next.getMinutes() + minutes);
+    return next;
+  }
 
   const dayMap: Record<string, number> = {
     sunday: 0,
@@ -249,18 +328,31 @@ async function ensureNextDrawExists(
   lastDraw: { drawDate: Date; drawNumber: number },
   count: number = 6
 ) {
-  // get all current upcoming draws
+  // 🔹 Get all upcoming draws for this game
   const upcoming: SchedulerDraw[] = await prisma.draw.findMany({
     where: { gameId: game.id, status: "UPCOMING" },
     orderBy: { drawNumber: "asc" },
   });
 
-  // track the most recent date/number
-  let latestDate = lastDraw.drawDate;
-  let latestNumber = lastDraw.drawNumber;
+  // 🔹 Find the latest draw number in DB (not just the one passed)
+  const latestDraw = await prisma.draw.findFirst({
+    where: { gameId: game.id },
+    orderBy: { drawNumber: "desc" },
+  });
 
-  // while less than desired upcoming draws, add new ones
+  let latestDate = latestDraw?.drawDate ?? lastDraw.drawDate;
+  let latestNumber = latestDraw?.drawNumber ?? lastDraw.drawNumber;
+
+  // 🔹 Keep track of drawNumbers to avoid duplicates
+  const existingNumbers = new Set(upcoming.map((d) => d.drawNumber));
+
+  // 🔹 While we have fewer than the desired upcoming draws, create new ones
   while (upcoming.length < count) {
+    latestNumber++;
+
+    // 🛑 Skip if this number already exists (avoid duplicates)
+    if (existingNumbers.has(latestNumber)) continue;
+
     const nextDate = getNextDrawDate(
       game.drawFrequency ?? "Saturday 8 PM",
       latestDate
@@ -269,7 +361,7 @@ async function ensureNextDrawExists(
     const newDraw = await prisma.draw.create({
       data: {
         gameId: game.id,
-        drawNumber: ++latestNumber,
+        drawNumber: latestNumber,
         drawDate: nextDate,
         winningMainNumbers: [],
         winningSpecialNumbers: [],
@@ -284,9 +376,9 @@ async function ensureNextDrawExists(
       } → ${nextDate.toISOString()}`
     );
 
-    // ✅ Push with correct type, no any
     upcoming.push(newDraw);
     latestDate = nextDate;
+    existingNumbers.add(latestNumber);
   }
 }
 
@@ -301,11 +393,10 @@ async function scheduleAllGames() {
     // ✅ Safely parse prizeDivisions JSON into real array
     const game: SchedulerGame = {
       ...rawGame,
-      prizeDivisions: rawGame.prizeDivisions
-        ? (JSON.parse(
-            rawGame.prizeDivisions as unknown as string
-          ) as SchedulerGame["prizeDivisions"])
-        : null,
+      prizeDivisions:
+        typeof rawGame.prizeDivisions === "string"
+          ? JSON.parse(rawGame.prizeDivisions)
+          : rawGame.prizeDivisions ?? null,
     };
 
     const cronExpr = getCronExpression(game.drawFrequency ?? "daily 9 PM");

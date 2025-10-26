@@ -34,6 +34,7 @@ export async function GET() {
             status: true,
             winningMainNumbers: true,
             winningSpecialNumbers: true,
+            divisionResults: true,
           },
         },
       },
@@ -41,28 +42,32 @@ export async function GET() {
     });
 
     const enhanced = tickets.map((t) => {
-      const draw = t.draw;
-      let status: "WON" | "LOST" | "PENDING" = "PENDING";
+      let result: "WON" | "LOST" | "PENDING" = "PENDING";
 
-      if (draw?.status === "COMPLETED") {
-        const mainMatch = t.numbers.filter((n) =>
-          draw.winningMainNumbers.includes(n)
-        ).length;
-        const specialMatch = t.specialNumbers.filter((n) =>
-          draw.winningSpecialNumbers.includes(n)
-        ).length;
+      if (t.status === "WON") result = "WON";
+      else if (t.status === "LOST") result = "LOST";
+      else if (t.draw?.status === "UPCOMING") result = "PENDING";
 
-        if (
-          mainMatch === draw.winningMainNumbers.length &&
-          specialMatch === draw.winningSpecialNumbers.length
-        ) {
-          status = "WON";
-        } else {
-          status = "LOST";
-        }
-      }
+      // ✅ strongly type divisionResults as array
+      const divisionResults = t.draw?.divisionResults
+        ? (t.draw.divisionResults as {
+            type: string;
+            poolCents: number;
+            winnersCount: number;
+            eachCents: number;
+          }[])
+        : [];
 
-      return { ...t, result: status };
+      const winningDivision = divisionResults.find(
+        (d) => d.eachCents === t.payoutCents && d.winnersCount > 0
+      );
+
+      return {
+        ...t,
+        result,
+        payoutCents: t.payoutCents ?? 0,
+        division: winningDivision?.type ?? null,
+      };
     });
 
     return NextResponse.json(enhanced, { status: 200 });

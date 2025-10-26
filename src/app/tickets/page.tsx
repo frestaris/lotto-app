@@ -44,7 +44,6 @@ export default function MyTicketsPage() {
   const activeMonth = selectedMonth || defaultMonth;
   const filteredTickets = grouped[activeMonth] || [];
 
-  // Not logged in
   if (!session)
     return (
       <div className="min-h-screen flex flex-col items-center justify-center text-gray-400">
@@ -58,11 +57,9 @@ export default function MyTicketsPage() {
       </div>
     );
 
-  // Loading
   if (isLoading)
     return <div className="text-center text-gray-400 py-10">Loading...</div>;
 
-  // No tickets
   if (tickets.length === 0)
     return (
       <div className="min-h-screen flex flex-col items-center justify-center text-gray-400">
@@ -97,7 +94,6 @@ export default function MyTicketsPage() {
         ))}
       </div>
 
-      {/* Showing info */}
       <h2 className="text-lg text-gray-300 font-semibold mb-4">
         Showing tickets purchased in{" "}
         <span className="text-yellow-400">{activeMonth || "…"}</span>
@@ -111,8 +107,9 @@ export default function MyTicketsPage() {
       ) : (
         filteredTickets.map((t) => {
           const status = t.result;
-          const drawDate = t.draw?.drawDate
-            ? new Date(t.draw.drawDate).toLocaleDateString(undefined, {
+          const draw = t.draw;
+          const drawDate = draw?.drawDate
+            ? new Date(draw.drawDate).toLocaleDateString(undefined, {
                 weekday: "short",
                 day: "numeric",
                 month: "short",
@@ -132,6 +129,15 @@ export default function MyTicketsPage() {
               : status === "LOST"
               ? "text-red-400"
               : "text-yellow-400";
+
+          const matchedMain =
+            draw?.winningMainNumbers?.filter((n) => t.numbers.includes(n)) ??
+            [];
+
+          const matchedSpecial =
+            draw?.winningSpecialNumbers?.filter((n) =>
+              t.specialNumbers.includes(n)
+            ) ?? [];
 
           return (
             <div
@@ -153,56 +159,116 @@ export default function MyTicketsPage() {
                   <div>
                     <h3 className="font-semibold">{t.game.name}</h3>
                     <p className="text-sm text-gray-400">
-                      Draw {t.draw?.drawNumber ?? "?"} — {drawDate}
+                      Draw {draw?.drawNumber ?? "?"} — {drawDate}
                     </p>
                   </div>
                 </div>
-                <span className={`text-sm font-semibold ${statusColor}`}>
+                <span
+                  className={`text-sm font-semibold flex items-center gap-2 ${statusColor}`}
+                >
                   {statusLabel}
+                  {status === "WON" && (t.payoutCents ?? 0) > 0 && (
+                    <span className="text-green-400 font-bold">
+                      +${((t.payoutCents ?? 0) / 100).toLocaleString()}
+                    </span>
+                  )}
                 </span>
               </div>
 
               {expandedId === t.id && (
                 <div className="mt-4 border-t border-white/10 pt-3 text-sm">
-                  <p className="text-gray-400 mb-2">
-                    Purchased:{" "}
+                  {/* Draw Winning Numbers */}
+                  {draw?.status === "COMPLETED" && (
+                    <div className="mb-4">
+                      <p className="text-gray-400 mb-2 font-medium">
+                        Winning Numbers:
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {draw.winningMainNumbers.map((n, i) => (
+                          <div
+                            key={i}
+                            className="w-8 h-8 flex items-center justify-center rounded-full bg-green-500 text-black font-bold text-sm"
+                          >
+                            {n}
+                          </div>
+                        ))}
+                        {draw.winningSpecialNumbers.length > 0 && (
+                          <span className="text-yellow-400 font-semibold px-1">
+                            +
+                          </span>
+                        )}
+                        {draw.winningSpecialNumbers.map((n, i) => (
+                          <div
+                            key={i}
+                            className="w-8 h-8 flex items-center justify-center rounded-full bg-purple-500 text-white font-bold text-sm"
+                          >
+                            {n}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* User’s Picked Numbers */}
+                  <p className="text-gray-400 mb-2 font-medium">
+                    Your Numbers:
+                  </p>
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {t.numbers.map((n, i) => {
+                      const matched = matchedMain.includes(n);
+                      return (
+                        <div
+                          key={i}
+                          className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-sm ${
+                            matched
+                              ? "bg-green-500 text-black"
+                              : "bg-gray-700 text-gray-300"
+                          }`}
+                        >
+                          {n}
+                        </div>
+                      );
+                    })}
+
+                    {t.specialNumbers.length > 0 && (
+                      <span className="text-yellow-400 font-semibold px-1">
+                        +
+                      </span>
+                    )}
+
+                    {t.specialNumbers.map((n, i) => {
+                      const matched = matchedSpecial.includes(n);
+                      return (
+                        <div
+                          key={i}
+                          className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-sm ${
+                            matched
+                              ? "bg-purple-500 text-white"
+                              : "bg-gray-700 text-gray-300"
+                          }`}
+                        >
+                          {n}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Cost + Purchase Date */}
+                  <p className="text-gray-400">
+                    Total cost:{" "}
+                    <span className="text-yellow-400 font-semibold">
+                      ${(t.priceCents / 100).toFixed(2)}
+                    </span>
+                  </p>
+
+                  <p className="text-gray-500 text-xs mt-1">
+                    Purchased on{" "}
                     {new Date(t.createdAt).toLocaleDateString(undefined, {
                       weekday: "short",
                       day: "numeric",
                       month: "short",
                       year: "numeric",
                     })}
-                  </p>
-
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    {t.numbers.map((n, i) => (
-                      <div
-                        key={i}
-                        className="w-8 h-8 flex items-center justify-center rounded-full bg-yellow-400 text-black font-bold text-sm"
-                      >
-                        {n}
-                      </div>
-                    ))}
-                    {t.specialNumbers.length > 0 && (
-                      <span className="text-yellow-400 font-semibold px-1">
-                        +
-                      </span>
-                    )}
-                    {t.specialNumbers.map((n, i) => (
-                      <div
-                        key={i}
-                        className="w-8 h-8 flex items-center justify-center rounded-full bg-purple-500 text-white font-bold text-sm"
-                      >
-                        {n}
-                      </div>
-                    ))}
-                  </div>
-
-                  <p className="text-gray-400">
-                    Total cost:{" "}
-                    <span className="text-yellow-400 font-semibold">
-                      ${(t.priceCents / 100).toFixed(2)}
-                    </span>
                   </p>
                 </div>
               )}
