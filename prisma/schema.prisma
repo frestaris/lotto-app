@@ -138,6 +138,8 @@ model Draw {
 
   divisionResults Json?
   
+  @@index([gameId, status])
+  @@index([gameId, drawDate])
 }
 
 enum TicketStatus {

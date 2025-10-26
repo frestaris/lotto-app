@@ -11,7 +11,14 @@ export default function ResultsPage() {
   const { data: draws = [], isLoading } = useGetLatestDrawsQuery();
 
   if (isLoading)
-    return <Spinner message="Loading latest results…" variant="accent" />;
+    return (
+      <Spinner
+        message="Loading latest results…"
+        variant="accent"
+        size="lg"
+        fullScreen
+      />
+    );
 
   if (!draws.length)
     return (

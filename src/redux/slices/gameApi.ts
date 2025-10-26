@@ -88,4 +88,5 @@ export const {
   useGetLatestDrawsQuery,
   useGetUserTicketsDetailedQuery,
   useGetTicketsByDrawIdQuery,
+  usePrefetch,
 } = gameApi;

@@ -5,7 +5,8 @@ import * as Icons from "lucide-react";
 import { CalendarDays, ChevronDown, CheckCircle2 } from "lucide-react";
 import type { Game, Draw } from "@/types/game";
 import { useGetDrawsByGameIdQuery } from "@/redux/slices/gameApi";
-import { getGameColor } from "@/utils/getGameColor"; // ✅ add this
+import { getGameColor } from "@/utils/getGameColor";
+import Spinner from "@/components/Spinner";
 
 interface GameHeaderProps {
   game: Game;
@@ -25,7 +26,7 @@ export default function GameHeader({
     isLoading: boolean;
   };
 
-  // Filter out past draws and sort upcoming ones
+  // Filter and sort upcoming draws
   const upcomingDraws = useMemo(() => {
     const now = new Date();
     return draws
@@ -43,41 +44,38 @@ export default function GameHeader({
     }
   }, [upcomingDraws, selectedDraw, setSelectedDraw]);
 
-  if (isLoading)
-    return (
-      <div className="flex items-center justify-center py-10 text-gray-400">
-        Loading draws...
-      </div>
-    );
-
-  if (!upcomingDraws.length)
-    return (
-      <div className="flex items-center justify-center py-10 text-gray-400">
-        No upcoming draws found.
-      </div>
-    );
-
   const currentDraw =
-    upcomingDraws.find((d) => d.id === selectedDraw?.id) || upcomingDraws[0];
+    upcomingDraws.find((d) => d.id === selectedDraw?.id) ||
+    upcomingDraws[0] ||
+    null;
 
-  const displayDrawDate = new Date(currentDraw.drawDate).toLocaleDateString(
-    undefined,
-    { weekday: "long", day: "numeric", month: "short", year: "numeric" }
+  const displayDrawDate = currentDraw ? (
+    new Date(currentDraw.drawDate).toLocaleDateString(undefined, {
+      weekday: "long",
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    })
+  ) : (
+    <Spinner size="sm" />
   );
 
-  const isNextDraw = upcomingDraws[0]?.id === currentDraw.id;
-
-  // Show jackpot only for the next draw, otherwise "Announcing Soon"
-  const jackpotAmount = isNextDraw
-    ? `$${(
-        (currentDraw?.jackpotCents ??
+  const isNextDraw = upcomingDraws[0]?.id === currentDraw?.id;
+  const jackpotAmount = currentDraw ? (
+    isNextDraw ? (
+      `$${(
+        (currentDraw.jackpotCents ??
           game.currentJackpotCents ??
           game.baseJackpotCents ??
           0) / 100
       ).toLocaleString()}`
-    : "Announcing Soon";
+    ) : (
+      "Announcing Soon"
+    )
+  ) : (
+    <Spinner size="sm" />
+  );
 
-  // ✅ Dynamic icon + color
   const Icon =
     (Icons[game.iconName as keyof typeof Icons] as React.ElementType) ||
     Icons.Ticket;
@@ -100,19 +98,21 @@ export default function GameHeader({
         <div className="flex flex-col md:flex-row justify-center items-center gap-3">
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-semibold text-gray-200">
-              {displayDrawDate}
+              {displayDrawDate || "Loading date..."}
             </h2>
-            <button
-              onClick={() => setShowCalendar((p) => !p)}
-              className="flex items-center gap-1 px-2 py-1 border border-white/20 rounded-md text-gray-400 hover:text-yellow-400 hover:border-yellow-400 transition cursor-pointer"
-            >
-              <CalendarDays className="w-4 h-4" />
-              <ChevronDown className="w-4 h-4" />
-            </button>
+            {!isLoading && upcomingDraws.length > 0 && (
+              <button
+                onClick={() => setShowCalendar((p) => !p)}
+                className="flex items-center gap-1 px-2 py-1 border border-white/20 rounded-md text-gray-400 hover:text-yellow-400 hover:border-yellow-400 transition cursor-pointer"
+              >
+                <CalendarDays className="w-4 h-4" />
+                <ChevronDown className="w-4 h-4" />
+              </button>
+            )}
           </div>
 
           <span className="text-gray-400 text-sm">
-            Draw {currentDraw.drawNumber}
+            {currentDraw ? `Draw ${currentDraw.drawNumber}` : "Loading draw..."}
           </span>
 
           <span
@@ -122,8 +122,9 @@ export default function GameHeader({
                 : "text-yellow-400"
             }`}
           >
-            {jackpotAmount}
+            {jackpotAmount || "Loading jackpot..."}
           </span>
+
           <span className="text-gray-400 text-sm">
             {jackpotAmount === "Announcing Soon" ? "" : "COMING UP"}
           </span>

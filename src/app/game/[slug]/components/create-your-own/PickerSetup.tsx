@@ -68,7 +68,7 @@ export default function PickerSetup({
           onChange={(e) => handleCountChange(Number(e.target.value))}
           className="bg-black border border-white/20 text-gray-200 rounded-lg px-4 py-2 cursor-pointer"
         >
-          {Array.from({ length: 20 }, (_, i) => i + 1).map((n) => (
+          {Array.from({ length: 50 }, (_, i) => i + 1).map((n) => (
             <option key={n} value={n}>
               {n} Game{n > 1 && "s"} – $
               {(n * (game.priceCents / 100)).toFixed(2)}

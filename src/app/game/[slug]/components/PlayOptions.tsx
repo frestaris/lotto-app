@@ -72,23 +72,24 @@ export default function PlayOptions({ game, selectedDraw }: PlayOptionsProps) {
   return (
     <div className="max-w-4xl mx-auto mt-12 text-center">
       {/* Toggle Buttons */}
-      <div className="flex justify-center gap-6 flex-wrap mb-10 ">
+      <div className="flex justify-center gap-6 flex-wrap mb-10">
         <button
           onClick={() => setMode("quick")}
-          className={`flex items-center gap-2 px-8 py-4 rounded-lg font-semibold text-lg transition cursor-pointer ${
+          className={`flex items-center gap-2 px-8 py-3 rounded-lg font-semibold text-lg cursor-pointer transition shadow-[0_0_20px_rgba(255,215,0,0.3)] ${
             mode === "quick"
-              ? "bg-gradient-to-r from-yellow-400 to-amber-500 text-black"
+              ? "bg-yellow-400 text-black hover:bg-yellow-500"
               : "border border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black"
           }`}
         >
           <Dice5 className="w-5 h-5" />
           Quick Play
         </button>
+
         <button
           onClick={() => setMode("custom")}
-          className={`flex items-center gap-2 px-8 py-4 rounded-lg font-semibold text-lg transition cursor-pointer ${
+          className={`flex items-center gap-2 px-8 py-3 rounded-lg font-semibold text-lg cursor-pointer transition shadow-[0_0_20px_rgba(255,215,0,0.3)] ${
             mode === "custom"
-              ? "bg-gradient-to-r from-yellow-400 to-amber-500 text-black"
+              ? "bg-yellow-400 text-black hover:bg-yellow-500"
               : "border border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black"
           }`}
         >
@@ -106,12 +107,12 @@ export default function PlayOptions({ game, selectedDraw }: PlayOptionsProps) {
           <p className="text-gray-400 text-sm my-4">
             Each package automatically generates random entries for you.
           </p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 justify-center">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 justify-center mt-10">
             {quickPlays.map((pack) => (
               <button
                 key={pack.label}
                 onClick={() => handleQuickPlay(pack.entries)}
-                className="bg-white/10 hover:bg-yellow-400/20 border border-white/10 rounded-xl py-5 px-3 transition flex flex-col items-center space-y-1 cursor-pointer"
+                className="relative rounded-xl border border-white/10 bg-white/5 backdrop-blur-md py-6 px-4 flex flex-col items-center justify-center cursor-pointer space-y-2 transition-all duration-300 hover:border-yellow-400/30 hover:shadow-[inset_0_0_20px_rgba(255,215,0,0.2)] hover:scale-[1.04]"
               >
                 <span className="text-yellow-400 font-bold text-lg">
                   {pack.label}

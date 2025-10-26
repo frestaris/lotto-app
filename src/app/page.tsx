@@ -7,11 +7,18 @@ import Link from "next/link";
 import type { Game } from "@/types/game";
 import Spinner from "@/components/Spinner";
 import GameCard from "@/components/GameCard";
+import { usePrefetch } from "@/redux/slices/gameApi";
 
 export default function HomePage() {
   const { data: games = [], isLoading, error } = useGetAllGamesQuery();
 
-  if (isLoading) return <Spinner message="Loading games…" variant="accent" />;
+  const prefetchGame = usePrefetch("getGameBySlug");
+  const prefetchDraws = usePrefetch("getDrawsByGameId");
+
+  if (isLoading)
+    return (
+      <Spinner message="Loading games…" variant="accent" size="lg" fullScreen />
+    );
 
   if (error)
     return (
@@ -66,7 +73,14 @@ export default function HomePage() {
               ] as React.ElementType) || Icons.Ticket;
 
             return (
-              <Link key={game.id} href={`/game/${game.slug}`}>
+              <Link
+                key={game.id}
+                href={`/game/${game.slug}`}
+                onMouseEnter={() => {
+                  prefetchGame(game.slug);
+                  prefetchDraws(game.id);
+                }}
+              >
                 <GameCard>
                   {/* Icon */}
                   <div className="transition-transform duration-300 group-hover:scale-110">
