@@ -26,7 +26,7 @@ export async function GET() {
     const tickets = await prisma.ticket.findMany({
       where: { userId: user.id },
       include: {
-        game: { select: { name: true, logoUrl: true } },
+        game: { select: { name: true, iconName: true, slug: true } },
         draw: {
           select: {
             drawNumber: true,

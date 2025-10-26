@@ -19,7 +19,7 @@ export interface Ticket {
  * Ticket joined with Game and Draw (from Prisma include)
  */
 export interface TicketWithRelations extends Ticket {
-  game: Pick<Game, "name" | "logoUrl">;
+  game: Pick<Game, "name" | "iconName" | "slug">;
   draw: Pick<
     Draw,
     | "drawNumber"

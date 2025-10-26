@@ -3,7 +3,7 @@ export type SchedulerGame = {
   slug: string;
   name: string;
   description?: string | null;
-  logoUrl?: string | null;
+  iconName?: string | null;
   priceCents: number;
   mainPickCount: number;
   mainRangeMin: number;

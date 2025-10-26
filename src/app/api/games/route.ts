@@ -31,7 +31,7 @@ export async function GET() {
       slug: g.slug,
       name: g.name,
       description: g.description,
-      logoUrl: g.logoUrl,
+      iconName: g.iconName,
       priceCents: g.priceCents,
       drawFrequency: g.drawFrequency,
       jackpotCurrency: g.jackpotCurrency,

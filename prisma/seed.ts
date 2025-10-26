@@ -4,16 +4,16 @@ import { PrismaClient, DrawStatus } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
-  // 🎯 POWERBALL
-  const powerball = await prisma.game.upsert({
-    where: { slug: "powerball" },
+  // 🌟 StarPick
+  const starPick = await prisma.game.upsert({
+    where: { slug: "starpick" },
     update: {},
     create: {
-      slug: "powerball",
-      name: "Powerball",
+      slug: "starpick",
+      name: "StarPick",
       description:
-        "Pick 5 numbers (1–69) and 1 Powerball (1–10). Draw every Thursday at 8 PM.",
-      logoUrl: "/images/powerball.png",
+        "Pick 5 numbers (1–69) and 1 Star Ball (1–10). Draw every Thursday at 8 PM.",
+      iconName: "Star",
       priceCents: 300,
       mainPickCount: 5,
       mainRangeMin: 1,
@@ -22,10 +22,8 @@ async function main() {
       specialRangeMin: 1,
       specialRangeMax: 10,
       drawFrequency: "Thursday 8 PM",
-      baseJackpotCents: 1000000000, // $10,000,000
+      baseJackpotCents: 1000000000,
       jackpotGrowthPct: 0.6,
-
-      // ✅ Jackpot is full payout (1.0)
       prizeDivisions: [
         { type: "Jackpot", matchMain: 5, matchSpecial: 1, percentage: 1.0 },
         { type: "Division 2", matchMain: 5, matchSpecial: 0, fixed: 10000000 },
@@ -37,24 +35,23 @@ async function main() {
     },
   });
 
-  // 💫 OZ LOTTO
-  const ozLotto = await prisma.game.upsert({
-    where: { slug: "oz-lotto" },
+  // 🍀 LuckyDraw 7
+  const luckyDraw7 = await prisma.game.upsert({
+    where: { slug: "luckydraw-7" },
     update: {},
     create: {
-      slug: "oz-lotto",
-      name: "Oz Lotto",
+      slug: "luckydraw-7",
+      name: "LuckyDraw 7",
       description: "Pick 7 numbers (1–45). Draw every Tuesday at 8 PM.",
-      logoUrl: "/images/ozlotto.png",
+      iconName: "Gift",
       priceCents: 200,
       mainPickCount: 7,
       mainRangeMin: 1,
       mainRangeMax: 45,
       specialPickCount: 0,
       drawFrequency: "Tuesday 8 PM",
-      baseJackpotCents: 500000000, // $5,000,000
+      baseJackpotCents: 500000000,
       jackpotGrowthPct: 0.5,
-
       prizeDivisions: [
         { type: "Jackpot", matchMain: 7, percentage: 1.0 },
         { type: "Division 2", matchMain: 6, fixed: 5000000 },
@@ -64,26 +61,25 @@ async function main() {
     },
   });
 
-  // 💰 SET FOR LIFE
-  const setForLife = await prisma.game.upsert({
-    where: { slug: "set-for-life" },
+  // 🌙 DreamLine Daily
+  const dreamLineDaily = await prisma.game.upsert({
+    where: { slug: "dreamline-daily" },
     update: {},
     create: {
-      slug: "set-for-life",
-      name: "Set for Life",
+      slug: "dreamline-daily",
+      name: "DreamLine Daily",
       description: "Pick 7 numbers (1–44). Daily draws at 9 PM.",
-      logoUrl: "/images/setforlife.png",
+      iconName: "Moon",
       priceCents: 250,
       mainPickCount: 7,
       mainRangeMin: 1,
       mainRangeMax: 44,
       specialPickCount: 0,
       drawFrequency: "Daily 9 PM",
-      baseJackpotCents: 200000000, // $2,000,000
+      baseJackpotCents: 200000000,
       jackpotGrowthPct: 0.4,
-
       prizeDivisions: [
-        { type: "Top Prize", matchMain: 7, percentage: 1.0 },
+        { type: "Jackpot", matchMain: 7, percentage: 1.0 },
         { type: "Division 2", matchMain: 6, fixed: 200000 },
         { type: "Division 3", matchMain: 5, fixed: 10000 },
         { type: "Division 4", matchMain: 4, fixed: 1000 },
@@ -91,25 +87,24 @@ async function main() {
     },
   });
 
-  // 🎟️ SATURDAY LOTTO
-  const saturdayLotto = await prisma.game.upsert({
-    where: { slug: "saturday-lotto" },
+  // 💎 Weekend Millions
+  const weekendMillions = await prisma.game.upsert({
+    where: { slug: "weekend-millions" },
     update: {},
     create: {
-      slug: "saturday-lotto",
-      name: "Saturday Lotto",
+      slug: "weekend-millions",
+      name: "Weekend Millions",
       description:
-        "Pick 6 numbers (1–45). Draw every Saturday at 8 PM. Classic Australian lotto game with big jackpots!",
-      logoUrl: "/images/saturdaylotto.png",
+        "Pick 6 numbers (1–45). Draw every Saturday at 8 PM. Your classic weekend lotto for big wins!",
+      iconName: "Trophy",
       priceCents: 250,
       mainPickCount: 6,
       mainRangeMin: 1,
       mainRangeMax: 45,
       specialPickCount: 0,
       drawFrequency: "Saturday 8 PM",
-      baseJackpotCents: 300000000, // $3,000,000
+      baseJackpotCents: 300000000,
       jackpotGrowthPct: 0.5,
-
       prizeDivisions: [
         { type: "Jackpot", matchMain: 6, percentage: 1.0 },
         { type: "Division 2", matchMain: 5, fixed: 100000 },
@@ -119,52 +114,9 @@ async function main() {
     },
   });
 
-  // const testlotto = await prisma.game.upsert({
-  //   where: { slug: "test-lotto" },
-  //   update: {
-  //     name: "Test Lotto",
-  //     description:
-  //       "A fast lotto game for debugging. Draw runs every 5 minutes.",
-  //     logoUrl: "/images/test-lotto.png",
-  //     priceCents: 200,
-  //     mainPickCount: 3,
-  //     mainRangeMin: 1,
-  //     mainRangeMax: 60, // ✅ will now update existing record
-  //     specialPickCount: 0,
-  //     drawFrequency: "Every 5min",
-  //     baseJackpotCents: 500000,
-  //     jackpotGrowthPct: 0.5,
-  //     prizeDivisions: JSON.stringify([
-  //       { type: "Jackpot", matchMain: 6, percentage: 1.0 },
-  //       { type: "Division 2", matchMain: 2, fixed: 1000 },
-  //       { type: "Division 3", matchMain: 1, fixed: 200 },
-  //     ]),
-  //   },
-  //   create: {
-  //     slug: "test-lotto",
-  //     name: "Test Lotto",
-  //     description:
-  //       "A fast lotto game for debugging. Draw runs every 5 minutes.",
-  //     logoUrl: "/images/test-lotto.png",
-  //     priceCents: 200,
-  //     mainPickCount: 3,
-  //     mainRangeMin: 1,
-  //     mainRangeMax: 60,
-  //     specialPickCount: 0,
-  //     drawFrequency: "Every 5min",
-  //     baseJackpotCents: 500000,
-  //     jackpotGrowthPct: 0.5,
-  //     prizeDivisions: JSON.stringify([
-  //       { type: "Jackpot", matchMain: 3, percentage: 1.0 },
-  //       { type: "Division 2", matchMain: 2, fixed: 1000 },
-  //       { type: "Division 3", matchMain: 1, fixed: 200 },
-  //     ]),
-  //   },
-  // });
-
   // 🗓️ GENERATE NEXT DRAWS
-  const games = [powerball, ozLotto, setForLife, saturdayLotto];
-  // const games = [testlotto];
+  const games = [starPick, luckyDraw7, dreamLineDaily, weekendMillions];
+
   for (const game of games) {
     await prisma.draw.deleteMany({ where: { gameId: game.id } });
 

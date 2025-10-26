@@ -85,7 +85,7 @@ model Game {
   slug             String   @unique
   name             String
   description      String?
-  logoUrl          String?
+  iconName         String?
   priceCents       Int      @default(200) // e.g., $2.00
   mainPickCount    Int
   mainRangeMin     Int      @default(1)

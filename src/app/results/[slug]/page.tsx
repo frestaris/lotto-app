@@ -7,7 +7,8 @@ import {
   useGetTicketsByDrawIdQuery,
 } from "@/redux/slices/gameApi";
 import { useState, useEffect } from "react";
-import Image from "next/image";
+import * as Icons from "lucide-react";
+import { getGameColor } from "@/utils/getGameColor"; // ✅ import your color helper
 import type { Draw } from "@/types/game";
 
 export default function GameResultsPage() {
@@ -65,19 +66,23 @@ export default function GameResultsPage() {
 
   const jackpot = selectedDraw.jackpotCents ?? game.currentJackpotCents ?? 0;
 
+  // ✅ Icon setup with color theme
+  const Icon =
+    (Icons[game.iconName as keyof typeof Icons] as React.ElementType) ||
+    Icons.Ticket;
+  const iconColor = getGameColor(game.slug);
+
   return (
     <div className="max-w-4xl mx-auto py-10 text-white">
       {/* 🎯 Header */}
       <div className="text-center mb-8">
-        <Image
-          src={game.logoUrl ?? "/images/default-logo.png"}
-          alt={game.name}
-          width={80}
-          height={80}
-          priority
-          className="w-20 h-20 object-contain mx-auto rounded-md"
-        />
-
+        <div className="flex items-center justify-center mb-4">
+          <div className="w-20 h-20 flex items-center justify-center rounded-full border border-yellow-400/30 bg-black/20">
+            <Icon
+              className={`w-12 h-12 ${iconColor} drop-shadow-[0_0_8px_rgba(255,215,0,0.7)]`}
+            />
+          </div>
+        </div>
         <h1 className="text-3xl font-bold text-yellow-400 mt-4">{game.name}</h1>
 
         <p className="text-gray-400">

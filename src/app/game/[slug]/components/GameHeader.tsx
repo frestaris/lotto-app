@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import Image from "next/image";
+import * as Icons from "lucide-react";
 import { CalendarDays, ChevronDown, CheckCircle2 } from "lucide-react";
 import type { Game, Draw } from "@/types/game";
 import { useGetDrawsByGameIdQuery } from "@/redux/slices/gameApi";
+import { getGameColor } from "@/utils/getGameColor"; // ✅ add this
 
 interface GameHeaderProps {
   game: Game;
@@ -64,7 +65,6 @@ export default function GameHeader({
     { weekday: "long", day: "numeric", month: "short", year: "numeric" }
   );
 
-  // Detect if this is the next upcoming draw
   const isNextDraw = upcomingDraws[0]?.id === currentDraw.id;
 
   // Show jackpot only for the next draw, otherwise "Announcing Soon"
@@ -77,26 +77,26 @@ export default function GameHeader({
       ).toLocaleString()}`
     : "Announcing Soon";
 
+  // ✅ Dynamic icon + color
+  const Icon =
+    (Icons[game.iconName as keyof typeof Icons] as React.ElementType) ||
+    Icons.Ticket;
+  const iconColor = getGameColor(game.slug);
+
   return (
     <div className="bg-gradient-to-b from-[#0a0a0a] to-[#1c1c1c] text-white py-12 border-b border-white/10">
       <div className="max-w-5xl mx-auto text-center space-y-6">
-        {/* Logo + title */}
+        {/* 🎯 Icon + title */}
         <div className="flex flex-col items-center justify-center gap-4">
-          {game.logoUrl && (
-            <div className="relative w-20 h-20">
-              <Image
-                src={game.logoUrl}
-                alt={game.name}
-                fill
-                sizes="80px"
-                className="object-contain rounded-full border border-yellow-400/30 bg-black/20 p-2"
-              />
-            </div>
-          )}
+          <div className="relative flex items-center justify-center w-20 h-20 rounded-full border border-yellow-400/30 bg-black/20 p-2">
+            <Icon
+              className={`w-12 h-12 ${iconColor} drop-shadow-[0_0_8px_rgba(255,215,0,0.7)]`}
+            />
+          </div>
           <h1 className="text-4xl font-bold text-yellow-400">{`Play ${game.name}`}</h1>
         </div>
 
-        {/* Current draw info */}
+        {/* 🗓️ Current draw info */}
         <div className="flex flex-col md:flex-row justify-center items-center gap-3">
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-semibold text-gray-200">
@@ -170,7 +170,6 @@ export default function GameHeader({
                           year: "numeric",
                         })}
                       </p>
-
                       <p className="text-yellow-400 text-sm">
                         Jackpot: $
                         {(
@@ -185,7 +184,7 @@ export default function GameHeader({
                 ))}
               </div>
 
-              {/* Right — rest of draws */}
+              {/* Right — future draws */}
               <div>
                 <h3 className="font-bold text-lg mb-2 text-yellow-400">
                   Upcoming draws:

@@ -1,7 +1,8 @@
 "use client";
 
 import { useGetAllGamesQuery } from "@/redux/slices/gameApi";
-import Image from "next/image";
+import { getGameColor } from "@/utils/getGameColor";
+import * as Icons from "lucide-react";
 import Link from "next/link";
 import type { Game } from "@/types/game";
 
@@ -35,8 +36,6 @@ export default function HomePage() {
           place.
         </p>
 
-        {/* 🎮 CTA Buttons */}
-
         <Link
           href="/results"
           className="border border-yellow-400 text-yellow-400 font-semibold px-8 py-3 rounded-lg hover:bg-yellow-400 hover:text-black transition"
@@ -47,49 +46,59 @@ export default function HomePage() {
 
       {/* 🎲 Games Grid */}
       <section className="max-w-6xl mx-auto px-6 pb-20 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-        {games.map((game: Game) => (
-          <Link
-            key={game.id}
-            href={`/game/${game.slug}`}
-            className="group bg-white/10 rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition transform hover:-translate-y-1 border border-white/10"
-          >
-            <div className="relative h-48 bg-black">
-              <Image
-                src={game.logoUrl || "/images/default-logo.png"}
-                alt={game.name}
-                fill
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                className="object-contain p-4 group-hover:scale-105 transition-transform"
-                priority
-              />
-            </div>
+        {games.map((game: Game) => {
+          // Pick correct Lucide icon
+          const Icon =
+            (Icons[game.iconName as keyof typeof Icons] as React.ElementType) ||
+            Icons.Ticket;
 
-            <div className="p-4 space-y-2">
-              <h2 className="text-xl font-semibold group-hover:text-yellow-400">
-                {game.name}
-              </h2>
+          // Get color for this game
+          const iconColor = getGameColor(game.slug);
 
-              {/* Draw frequency */}
-              <p className="text-sm text-gray-400">{game.drawFrequency}</p>
+          return (
+            <Link
+              key={game.id}
+              href={`/game/${game.slug}`}
+              className="group bg-white/10 rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition transform hover:-translate-y-1 border border-white/10"
+            >
+              {/* Icon Section */}
+              <div className="relative h-48 flex items-center justify-center bg-black">
+                <Icon
+                  className={`w-20 h-20 ${iconColor} group-hover:scale-110 transition-transform drop-shadow-[0_0_10px_rgba(255,215,0,0.6)]`}
+                />
+              </div>
 
-              {/* Current Jackpot */}
-              {game.currentJackpotCents && (
-                <p className="text-lg font-bold text-yellow-400">
-                  $
-                  {(game.currentJackpotCents / 100).toLocaleString(undefined, {
-                    currency: game.jackpotCurrency || "AUD",
-                    maximumFractionDigits: 0,
-                  })}
+              {/* Game Info */}
+              <div className="p-4 space-y-2">
+                <h2 className="text-xl font-semibold group-hover:text-yellow-400">
+                  {game.name}
+                </h2>
+
+                {/* Draw Frequency */}
+                <p className="text-sm text-gray-400">{game.drawFrequency}</p>
+
+                {/* Current Jackpot */}
+                {game.currentJackpotCents && (
+                  <p className="text-lg font-bold text-yellow-400">
+                    $
+                    {(game.currentJackpotCents / 100).toLocaleString(
+                      undefined,
+                      {
+                        currency: game.jackpotCurrency || "AUD",
+                        maximumFractionDigits: 0,
+                      }
+                    )}
+                  </p>
+                )}
+
+                {/* Ticket Price */}
+                <p className="text-sm text-gray-400">
+                  ${(game.priceCents / 100).toFixed(2)} per ticket
                 </p>
-              )}
-
-              {/* Ticket price */}
-              <p className="text-sm text-gray-400">
-                ${(game.priceCents / 100).toFixed(2)} per ticket
-              </p>
-            </div>
-          </Link>
-        ))}
+              </div>
+            </Link>
+          );
+        })}
       </section>
     </div>
   );

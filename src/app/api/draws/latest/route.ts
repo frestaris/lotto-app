@@ -69,7 +69,7 @@ export async function GET() {
         ? {
             gameId: g.id,
             gameName: g.name,
-            logoUrl: g.logoUrl,
+            iconName: g.iconName,
             drawNumber: target.drawNumber,
             drawDate: target.drawDate,
             jackpotCents: target.jackpotCents,

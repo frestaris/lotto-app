@@ -3,7 +3,7 @@ export interface Game {
   slug: string;
   name: string;
   description?: string | null;
-  logoUrl?: string | null;
+  iconName?: string | null;
   priceCents: number;
   mainPickCount: number;
   mainRangeMin: number;
@@ -67,7 +67,7 @@ export type DisplayStatus =
 export interface LatestDraw {
   gameId: string;
   gameName: string;
-  logoUrl: string | null;
+  iconName: string | null;
   drawNumber: number;
   drawDate: string;
   jackpotCents?: number | null;

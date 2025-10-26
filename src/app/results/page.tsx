@@ -1,7 +1,9 @@
 "use client";
+
 import Link from "next/link";
-import Image from "next/image";
+import * as Icons from "lucide-react";
 import { useGetLatestDrawsQuery } from "@/redux/slices/gameApi";
+import { getGameColor } from "@/utils/getGameColor";
 
 export default function ResultsPage() {
   const { data: draws = [], isLoading } = useGetLatestDrawsQuery();
@@ -36,22 +38,28 @@ export default function ResultsPage() {
           const isToday = d.displayStatus === "TODAY";
           const isAwaiting = d.displayStatus === "AWAITING_RESULTS";
 
+          // ✅ Generate a slug from the name (matches backend slug)
+          const slug = d.gameName.toLowerCase().replace(/\s+/g, "-");
+
+          // ✅ Pick correct icon and color
+          const Icon =
+            (Icons[d.iconName as keyof typeof Icons] as React.ElementType) ||
+            Icons.Ticket;
+          const iconColor = getGameColor(slug);
+
           return (
             <Link
               key={`${d.gameId}-${d.drawNumber}`}
-              href={`/results/${d.gameName.toLowerCase().replace(/\s+/g, "-")}`}
+              href={`/results/${slug}`}
               className="bg-white/5 hover:bg-white/10 p-6 rounded-xl border border-white/10 transition"
             >
               {/* Header */}
               <div className="flex items-center gap-4">
-                <Image
-                  src={d.logoUrl || "/images/default-logo.png"}
-                  alt={d.gameName}
-                  width={56}
-                  height={56}
-                  priority
-                  className="w-14 h-14 object-contain rounded-md"
-                />
+                <div className="w-14 h-14 flex items-center justify-center rounded-md border border-yellow-400/30 bg-black/20">
+                  <Icon
+                    className={`w-8 h-8 ${iconColor} drop-shadow-[0_0_8px_rgba(255,215,0,0.7)]`}
+                  />
+                </div>
 
                 <div>
                   <h2 className="text-xl font-semibold">{d.gameName}</h2>

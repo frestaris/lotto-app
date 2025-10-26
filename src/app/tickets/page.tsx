@@ -3,7 +3,8 @@
 import { useState, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import Image from "next/image";
+import * as Icons from "lucide-react";
+import { getGameColor } from "@/utils/getGameColor";
 import { useGetUserTicketsQuery } from "@/redux/slices/gameApi";
 import type { UserTicket } from "@/types/ticket";
 
@@ -149,13 +150,25 @@ export default function MyTicketsPage() {
                 onClick={() => setExpandedId(expandedId === t.id ? null : t.id)}
               >
                 <div className="flex items-center gap-3">
-                  <Image
-                    src={t.game.logoUrl || "/images/default-logo.png"}
-                    alt={t.game.name}
-                    width={48}
-                    height={48}
-                    className="w-10 h-10 object-contain rounded-md"
-                  />
+                  {(() => {
+                    // ✅ Pick the correct Lucide icon from the game’s iconName
+                    const Icon =
+                      (Icons[
+                        t.game.iconName as keyof typeof Icons
+                      ] as React.ElementType) || Icons.Ticket;
+
+                    // ✅ Apply the global color
+                    const iconColor = getGameColor(t.game.slug);
+
+                    return (
+                      <div className="w-10 h-10 flex items-center justify-center rounded-md border border-yellow-400/30 bg-black/20">
+                        <Icon
+                          className={`w-6 h-6 ${iconColor} drop-shadow-[0_0_8px_rgba(255,215,0,0.7)]`}
+                        />
+                      </div>
+                    );
+                  })()}
+
                   <div>
                     <h3 className="font-semibold">{t.game.name}</h3>
                     <p className="text-sm text-gray-400">
