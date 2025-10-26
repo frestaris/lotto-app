@@ -6,6 +6,7 @@ import * as Icons from "lucide-react";
 import Link from "next/link";
 import type { Game } from "@/types/game";
 import Spinner from "@/components/Spinner";
+import GameCard from "@/components/GameCard";
 
 export default function HomePage() {
   const { data: games = [], isLoading, error } = useGetAllGamesQuery();
@@ -26,7 +27,7 @@ export default function HomePage() {
 
   return (
     <div className="relative text-white bg-gradient-to-b from-[#0a0a0a] via-[#0f0f0f] to-[#1a1a1a] overflow-hidden">
-      {/* HERO */}
+      {/* HERO SECTION */}
       <section
         className="flex flex-col justify-between items-center text-center px-6 py-12 gap-10"
         style={{ minHeight: "calc(100vh - 72px)" }}
@@ -34,7 +35,7 @@ export default function HomePage() {
         {/* Background glow */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,215,0,0.12)_0%,rgba(0,0,0,1)_70%)] pointer-events-none" />
 
-        {/* HERO CONTENT */}
+        {/* Hero Content */}
         <div className="z-10">
           <h1 className="text-5xl md:text-6xl font-extrabold mb-4">
             Play Your Favourite{" "}
@@ -65,12 +66,9 @@ export default function HomePage() {
               ] as React.ElementType) || Icons.Ticket;
 
             return (
-              <Link
-                key={game.id}
-                href={`/game/${game.slug}`}
-                className="group relative rounded-2xl border border-white/10 bg-gradient-to-b from-[#161616] to-[#0a0a0a] overflow-hidden hover:shadow-[0_0_25px_rgba(255,215,0,0.3)] transition-all duration-300"
-              >
-                <div className="relative z-10 flex flex-col items-center justify-center text-center p-6 space-y-3">
+              <Link key={game.id} href={`/game/${game.slug}`}>
+                <GameCard>
+                  {/* Icon */}
                   <div className="transition-transform duration-300 group-hover:scale-110">
                     <Icon
                       className={`w-12 h-12 ${getGameColor(
@@ -79,10 +77,12 @@ export default function HomePage() {
                     />
                   </div>
 
+                  {/* Name */}
                   <h2 className="text-lg font-semibold group-hover:text-yellow-400 transition-colors duration-200">
                     {game.name}
                   </h2>
 
+                  {/* Jackpot */}
                   {game.currentJackpotCents && (
                     <p className="text-xl font-bold text-yellow-400 transition-opacity duration-300 group-hover:opacity-90">
                       $
@@ -95,12 +95,13 @@ export default function HomePage() {
                     </p>
                   )}
 
+                  {/* Draw info */}
                   <p className="text-sm text-gray-400">{game.drawFrequency}</p>
                   <div className="h-[3px] w-1/2 bg-yellow-400/30 mt-2 rounded-full"></div>
                   <p className="text-xs text-gray-500">
                     ${(game.priceCents / 100).toFixed(2)} per ticket
                   </p>
-                </div>
+                </GameCard>
               </Link>
             );
           })}

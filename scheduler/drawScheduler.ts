@@ -402,15 +402,21 @@ async function scheduleAllGames() {
     const cronExpr = getCronExpression(game.drawFrequency ?? "daily 9 PM");
 
     // Run every time the cron triggers (weekly/daily)
-    cron.schedule(cronExpr, async () => {
-      await runDueDrawsForGame(game);
-    });
+    cron.schedule(
+      cronExpr,
+      async () => {
+        await runDueDrawsForGame(game);
+      },
+      { timezone: "UTC" }
+    );
 
     console.log(
       `⏰ Scheduled ${game.name} (${
         game.drawFrequency ?? "daily 9 PM"
       }) → ${cronExpr}`
     );
+
+    await runDueDrawsForGame(game);
 
     // Also ensure an upcoming draw exists on startup
     const latestDraw = await prisma.draw.findFirst({
