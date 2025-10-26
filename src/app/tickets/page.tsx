@@ -118,7 +118,7 @@ export default function MyTicketsPage() {
 
           const statusLabel =
             status === "WON"
-              ? "🏆 Win"
+              ? "Win"
               : status === "LOST"
               ? "❌ No Win"
               : "🟡 Pending";
@@ -169,7 +169,7 @@ export default function MyTicketsPage() {
                   {statusLabel}
                   {status === "WON" && (t.payoutCents ?? 0) > 0 && (
                     <span className="text-green-400 font-bold">
-                      +${((t.payoutCents ?? 0) / 100).toLocaleString()}
+                      ${((t.payoutCents ?? 0) / 100).toLocaleString()}
                     </span>
                   )}
                 </span>
@@ -187,7 +187,7 @@ export default function MyTicketsPage() {
                         {draw.winningMainNumbers.map((n, i) => (
                           <div
                             key={i}
-                            className="w-8 h-8 flex items-center justify-center rounded-full bg-green-500 text-black font-bold text-sm"
+                            className="w-8 h-8 flex items-center justify-center rounded-full bg-yellow-500 text-black font-bold text-sm"
                           >
                             {n}
                           </div>

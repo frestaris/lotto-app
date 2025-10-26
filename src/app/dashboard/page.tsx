@@ -49,8 +49,11 @@ export default function DashboardPage() {
               )}
               <div>
                 <h2 className="text-xl font-semibold">
-                  {session?.user?.name || "Anonymous"}
+                  {session?.user?.name ||
+                    session?.user?.email?.split("@")[0] ||
+                    "Guest"}
                 </h2>
+
                 <p className="text-gray-400">{session?.user?.email}</p>
               </div>
             </div>
@@ -62,18 +65,8 @@ export default function DashboardPage() {
           {/* Stats / Wallet */}
           <div className="bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-white/20 shadow-lg flex flex-col justify-center">
             <h3 className="text-lg text-gray-300 mb-2">Available Credits</h3>
-            <p className="text-4xl font-bold text-yellow-400">$10.00</p>
-          </div>
-        </div>
-
-        {/* Tickets Section */}
-        <div className="mt-12">
-          <h2 className="text-2xl font-bold text-yellow-400 mb-4">
-            Your Tickets
-          </h2>
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-            <p className="text-gray-400">
-              No tickets yet. Go play your first game!
+            <p className="text-4xl font-bold text-yellow-400">
+              ${((session?.user?.creditCents || 0) / 100).toFixed(2)}
             </p>
           </div>
         </div>

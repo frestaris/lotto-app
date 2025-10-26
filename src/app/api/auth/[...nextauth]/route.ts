@@ -14,6 +14,7 @@ interface AuthUser {
   email?: string | null;
   image?: string | null;
   accessToken?: string;
+  creditCents?: number; // ✅ include creditCents
 }
 
 export const authOptions: NextAuthOptions = {
@@ -50,28 +51,24 @@ export const authOptions: NextAuthOptions = {
         // ✅ Generate our own access token (1h expiry)
         const accessToken = jwt.sign(
           { userId: user.id, email: user.email },
-          process.env.NEXTAUTH_SECRET!, // reuse your NextAuth secret
+          process.env.NEXTAUTH_SECRET!,
           { expiresIn: "1h" }
         );
 
-        // ✅ Return a plain object (NextAuth expects this)
         return {
           id: user.id,
           name: user.name,
           email: user.email,
           image: user.image,
           accessToken,
+          creditCents: user.creditCents, // ✅ include creditCents
         };
       },
     }),
   ],
 
-  // ✅ Use JWT strategy so session persists in cookies — no DB calls needed
-  session: {
-    strategy: "jwt",
-  },
+  session: { strategy: "jwt" },
 
-  // ✅ Custom callbacks to persist user and access token
   callbacks: {
     async jwt({ token, user, account }) {
       // Attach user info on login
@@ -91,18 +88,27 @@ export const authOptions: NextAuthOptions = {
     },
 
     async session({ session, token }) {
-      if (token?.user) {
-        session.user = {
-          ...session.user,
-          ...(token.user as AuthUser),
-          accessToken: token.accessToken as string | undefined,
-        };
+      // Ensure user exists in DB
+      if (session.user?.email) {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: session.user.email },
+          select: { id: true, creditCents: true },
+        });
+
+        if (dbUser) {
+          session.user.id = dbUser.id;
+          session.user.creditCents = dbUser.creditCents;
+        }
       }
+
+      if (token?.accessToken) {
+        session.user.accessToken = token.accessToken as string;
+      }
+
       return session;
     },
   },
 
-  // ✅ Optional custom sign-in page
   pages: {
     signIn: "/login",
   },

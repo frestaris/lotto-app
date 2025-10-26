@@ -64,12 +64,18 @@ export default function GameHeader({
     { weekday: "long", day: "numeric", month: "short", year: "numeric" }
   );
 
-  const jackpotAmount = `$${(
-    (currentDraw?.jackpotCents ??
-      game.currentJackpotCents ??
-      game.baseJackpotCents ??
-      0) / 100
-  ).toLocaleString()}`;
+  // Detect if this is the next upcoming draw
+  const isNextDraw = upcomingDraws[0]?.id === currentDraw.id;
+
+  // Show jackpot only for the next draw, otherwise "Announcing Soon"
+  const jackpotAmount = isNextDraw
+    ? `$${(
+        (currentDraw?.jackpotCents ??
+          game.currentJackpotCents ??
+          game.baseJackpotCents ??
+          0) / 100
+      ).toLocaleString()}`
+    : "Announcing Soon";
 
   return (
     <div className="bg-gradient-to-b from-[#0a0a0a] to-[#1c1c1c] text-white py-12 border-b border-white/10">
@@ -109,12 +115,18 @@ export default function GameHeader({
             Draw {currentDraw.drawNumber}
           </span>
 
-          <div className="ml-4 flex items-center gap-2">
-            <span className="text-yellow-400 text-2xl font-bold">
-              {jackpotAmount}
-            </span>
-            <span className="text-gray-400 text-sm">COMING UP</span>
-          </div>
+          <span
+            className={`text-2xl font-bold ${
+              jackpotAmount === "Announcing Soon"
+                ? "text-gray-400 italic"
+                : "text-yellow-400"
+            }`}
+          >
+            {jackpotAmount}
+          </span>
+          <span className="text-gray-400 text-sm">
+            {jackpotAmount === "Announcing Soon" ? "" : "COMING UP"}
+          </span>
         </div>
       </div>
 
