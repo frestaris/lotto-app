@@ -2,20 +2,25 @@
 
 import React from "react";
 
-export default function CardShell({
+export default function GameCard({
   children,
   className = "",
+  onClick,
 }: {
   children: React.ReactNode;
   className?: string;
+  onClick?: () => void;
 }) {
   return (
     <div
+      onClick={onClick}
       className={`group relative rounded-2xl border border-white/10
-    bg-gradient-to-b from-[#161616] to-[#0a0a0a]
-    overflow-hidden transition-all duration-300
-    hover:shadow-[0_0_25px_rgba(255,215,0,0.3)]
-    hover:border-yellow-400/20 h-full ${className}`}
+      bg-gradient-to-b from-[#161616] to-[#0a0a0a]
+      overflow-hidden transition-all duration-300
+      hover:shadow-[0_0_25px_rgba(255,215,0,0.3)]
+      hover:border-yellow-400/20 h-full
+      ${onClick ? "cursor-pointer active:scale-[0.98]" : ""}
+      ${className}`}
     >
       {/* glow */}
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
