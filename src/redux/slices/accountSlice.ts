@@ -8,6 +8,7 @@ interface AccountState {
     email?: string | null;
     creditCents?: number;
     image?: string | null;
+    password?: string | null;
   } | null;
 }
 

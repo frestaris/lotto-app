@@ -19,6 +19,7 @@ export default function EditEmailCard() {
 
   const { data: session, update: updateSession } = useSession();
   const account = useAppSelector((s) => s.account.account);
+  const isGoogleUser = session?.user?.provider === "google";
   const dispatch = useAppDispatch();
   const [updateAccount] = useUpdateAccountMutation();
 
@@ -41,6 +42,13 @@ export default function EditEmailCard() {
     e.preventDefault();
     setStatus("loading");
     setMessage("");
+    if (isGoogleUser) {
+      setMessage(
+        "Google accounts cannot change email. Please update it in Google."
+      );
+      setStatus("error");
+      return;
+    }
 
     try {
       const res = await updateAccount({
@@ -74,20 +82,29 @@ export default function EditEmailCard() {
       setMessage("Email updated successfully!");
       setEmail("");
     } catch (err: unknown) {
-      if (err && typeof err === "object" && "data" in err) {
-        const apiErr = err as { data?: { error?: string } };
+      if (
+        typeof err === "object" &&
+        err !== null &&
+        "status" in err &&
+        typeof (err as { status?: number }).status === "number" &&
+        (err as { status?: number }).status === 403
+      ) {
         setStatus("error");
-        setMessage(apiErr.data?.error || "Failed to update email.");
-      } else {
-        setStatus("error");
-        setMessage("Something went wrong.");
+        setMessage("Email change not allowed for Google accounts.");
+        return;
       }
+
+      setStatus("error");
+      setMessage("Something went wrong.");
     }
   };
 
   return (
     <>
-      <GameCard onClick={() => setOpen(true)}>
+      <GameCard
+        onClick={() => !isGoogleUser && setOpen(true)}
+        className={isGoogleUser ? "cursor-not-allowed" : ""}
+      >
         <Mail className="w-6 h-6 text-yellow-400 mb-2" />
         <h3 className="text-sm text-gray-400">Email</h3>
 
@@ -96,7 +113,7 @@ export default function EditEmailCard() {
         </p>
 
         <span className="text-yellow-400 font-semibold text-sm mt-2">
-          Edit Email
+          {isGoogleUser ? "Cannot edit Google Account" : "Edit Email"}
         </span>
       </GameCard>
 

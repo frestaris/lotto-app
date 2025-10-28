@@ -9,11 +9,13 @@ declare module "next-auth" {
       image?: string | null;
       accessToken?: string;
       creditCents?: number;
+      provider?: string;
     };
   }
 
   interface User {
     creditCents?: number;
+    provider?: string;
   }
 }
 
@@ -25,6 +27,7 @@ declare module "next-auth/jwt" {
       email?: string | null;
       image?: string | null;
       creditCents?: number;
+      provider?: string;
     };
     accessToken?: string;
   }

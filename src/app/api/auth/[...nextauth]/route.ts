@@ -15,6 +15,7 @@ interface AuthUser {
   image?: string | null;
   accessToken?: string;
   creditCents?: number;
+  provider?: string;
 }
 
 export const authOptions: NextAuthOptions = {
@@ -74,6 +75,7 @@ export const authOptions: NextAuthOptions = {
       // 🧩 Attach user info when logging in
       if (user) {
         token.user = user as AuthUser;
+        token.user.provider = account?.provider || "credentials";
       }
 
       // 🔑 Google access token
@@ -97,6 +99,7 @@ export const authOptions: NextAuthOptions = {
         session.user.email = token.user.email;
         session.user.image = token.user.image;
         session.user.creditCents = token.user.creditCents;
+        session.user.provider = token.user.provider || "credentials";
       }
 
       if (token?.accessToken) {

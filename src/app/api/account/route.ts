@@ -31,6 +31,17 @@ export async function PATCH(req: Request) {
 
     // ✉️ Update Email
     if (action === "editEmail") {
+      // 🚫 Prevent email change for Google/OAuth users (no password in DB)
+      if (!user.password) {
+        return NextResponse.json(
+          {
+            error:
+              "Email change is not allowed for Google accounts. Update your email from your Google Account instead.",
+          },
+          { status: 403 }
+        );
+      }
+
       if (!newEmail) {
         return NextResponse.json(
           { error: "Missing new email" },
@@ -48,6 +59,17 @@ export async function PATCH(req: Request) {
 
     // 🔑 Change Password
     if (action === "changePassword") {
+      // 🚫 Prevent password change for Google/OAuth users
+      if (!user.password) {
+        return NextResponse.json(
+          {
+            error:
+              "Password change is not allowed for Google accounts. Your account uses Google Sign-In.",
+          },
+          { status: 403 }
+        );
+      }
+
       if (!newPassword) {
         return NextResponse.json(
           { error: "Missing new password" },
