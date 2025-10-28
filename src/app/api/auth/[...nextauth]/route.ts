@@ -14,7 +14,7 @@ interface AuthUser {
   email?: string | null;
   image?: string | null;
   accessToken?: string;
-  creditCents?: number; // ✅ include creditCents
+  creditCents?: number;
 }
 
 export const authOptions: NextAuthOptions = {
@@ -48,7 +48,7 @@ export const authOptions: NextAuthOptions = {
         const isValid = await compare(credentials.password, user.password);
         if (!isValid) throw new Error("Invalid password");
 
-        // ✅ Generate our own access token (1h expiry)
+        // ✅ Generate our own short-lived token (1h expiry)
         const accessToken = jwt.sign(
           { userId: user.id, email: user.email },
           process.env.NEXTAUTH_SECRET!,
@@ -61,7 +61,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           image: user.image,
           accessToken,
-          creditCents: user.creditCents, // ✅ include creditCents
+          creditCents: user.creditCents,
         };
       },
     }),
@@ -71,15 +71,17 @@ export const authOptions: NextAuthOptions = {
 
   callbacks: {
     async jwt({ token, user, account }) {
-      // Attach user info on login
-      if (user) token.user = user as AuthUser;
+      // 🧩 Attach user info when logging in
+      if (user) {
+        token.user = user as AuthUser;
+      }
 
-      // Add Google access token
+      // 🔑 Google access token
       if (account?.access_token) {
         token.accessToken = account.access_token;
       }
 
-      // Add custom JWT from credentials login
+      // 💾 Custom access token for credentials
       if (user && (user as AuthUser).accessToken) {
         token.accessToken = (user as AuthUser).accessToken;
       }
@@ -88,17 +90,13 @@ export const authOptions: NextAuthOptions = {
     },
 
     async session({ session, token }) {
-      // Ensure user exists in DB
-      if (session.user?.email) {
-        const dbUser = await prisma.user.findUnique({
-          where: { email: session.user.email },
-          select: { id: true, creditCents: true },
-        });
-
-        if (dbUser) {
-          session.user.id = dbUser.id;
-          session.user.creditCents = dbUser.creditCents;
-        }
+      // ✅ Always use token.user.id, not lookup by email
+      if (token?.user) {
+        session.user.id = token.user.id;
+        session.user.name = token.user.name;
+        session.user.email = token.user.email;
+        session.user.image = token.user.image;
+        session.user.creditCents = token.user.creditCents;
       }
 
       if (token?.accessToken) {

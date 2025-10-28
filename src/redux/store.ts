@@ -4,7 +4,9 @@ import { configureStore } from "@reduxjs/toolkit";
 import { useDispatch, useSelector, TypedUseSelectorHook } from "react-redux";
 import cartReducer, { syncFromStorage } from "./slices/cartSlice";
 import ticketReducer from "./slices/ticketSlice";
+import accountReducer from "./slices/accountSlice";
 import { baseApi } from "./api/baseApi";
+import { accountApi } from "./api/accountApi";
 
 /* --------------------------------------------
    🧩 Store Configuration
@@ -14,10 +16,14 @@ export const makeStore = () =>
     reducer: {
       cart: cartReducer,
       tickets: ticketReducer,
+      account: accountReducer,
       [baseApi.reducerPath]: baseApi.reducer,
+      [accountApi.reducerPath]: accountApi.reducer,
     },
     middleware: (getDefaultMiddleware) =>
-      getDefaultMiddleware().concat(baseApi.middleware),
+      getDefaultMiddleware()
+        .concat(baseApi.middleware)
+        .concat(accountApi.middleware),
     devTools: process.env.NODE_ENV !== "production",
   });
 

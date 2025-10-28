@@ -407,7 +407,7 @@ async function scheduleAllGames() {
       async () => {
         await runDueDrawsForGame(game);
       },
-      { timezone: "UTC" }
+      { timezone: "Australia/Brisbane" }
     );
 
     console.log(
