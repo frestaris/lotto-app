@@ -130,26 +130,45 @@ export async function PATCH(req: Request) {
 export async function DELETE() {
   try {
     const session = await getServerSession(authOptions);
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 🔍 Lookup user by ID instead of email
+    // 🔍 Lookup user
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
+      select: { id: true, creditCents: true },
     });
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    if (user.creditCents && user.creditCents > 0) {
+      return NextResponse.json(
+        {
+          error: "You must have 0 credits to delete your account.",
+          remainingCredits: user.creditCents,
+        },
+        { status: 403 }
+      );
+    }
+
     await prisma.user.delete({ where: { id: user.id } });
 
     return NextResponse.json({ message: "Account deleted successfully" });
   } catch (err) {
-    console.error("DELETE /api/account error:", err);
+    if (err instanceof Error) {
+      console.error("💥 DELETE /api/account error:", err.message);
+      return NextResponse.json(
+        { error: "Internal Server Error", details: err.message },
+        { status: 500 }
+      );
+    }
+    console.error("💥 DELETE /api/account error:", err);
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { error: "Unexpected error occurred" },
       { status: 500 }
     );
   }

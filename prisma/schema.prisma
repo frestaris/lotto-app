@@ -42,7 +42,8 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
-  user              User    @relation(fields: [userId], references: [id])
+    user              User    @relation(fields: [userId], references: [id], onDelete: Cascade) 
+
 
   @@unique([provider, providerAccountId])
 }
@@ -52,7 +53,7 @@ model Session {
   sessionToken String   @unique
   userId       String
   expires      DateTime
-  user         User     @relation(fields: [userId], references: [id])
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade) 
 }
 
 model VerificationToken {
@@ -72,7 +73,7 @@ model WalletTransaction {
   reference   String?  // drawId, ticketId, etc.
   description String?
   createdAt   DateTime @default(now())
-  user        User     @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 
@@ -160,7 +161,7 @@ model Ticket {
   payoutCents    Int?          @default(0) 
   createdAt      DateTime      @default(now())
 
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   game Game @relation(fields: [gameId], references: [id])
   draw Draw @relation(fields: [drawId], references: [id], onDelete: Cascade)
 

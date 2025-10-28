@@ -103,7 +103,7 @@ export default function EditEmailCard() {
     <>
       <GameCard
         onClick={() => !isGoogleUser && setOpen(true)}
-        className={isGoogleUser ? "cursor-not-allowed" : ""}
+        className={isGoogleUser ? "cursor-not-allowed opacity-50" : ""}
       >
         <Mail className="w-6 h-6 text-yellow-400 mb-2" />
         <h3 className="text-sm text-gray-400">Email</h3>

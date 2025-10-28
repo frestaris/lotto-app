@@ -42,7 +42,7 @@ export default function ChangePasswordCard() {
     setMessage("");
 
     try {
-      const res = await updateAccount({
+      await updateAccount({
         action: "changePassword",
         newPassword,
       }).unwrap();
