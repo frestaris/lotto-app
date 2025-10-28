@@ -9,18 +9,15 @@ import { useUpdateAccountMutation } from "@/redux/api/accountApi";
 
 export default function ChangePasswordCard() {
   const [open, setOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [status, setStatus] = useState<
     "idle" | "loading" | "success" | "error"
   >("idle");
   const [message, setMessage] = useState("");
 
-  // ✅ Fetch the current session
   const { data: session } = useSession();
-
-  // Detect Google users via provider
   const isGoogleUser = session?.user?.provider === "google";
-
   const [updateAccount] = useUpdateAccountMutation();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -32,9 +29,9 @@ export default function ChangePasswordCard() {
       return;
     }
 
-    if (!newPassword.trim()) {
+    if (!currentPassword.trim() || !newPassword.trim()) {
       setStatus("error");
-      setMessage("Please enter a new password.");
+      setMessage("Please fill in both current and new passwords.");
       return;
     }
 
@@ -44,27 +41,27 @@ export default function ChangePasswordCard() {
     try {
       await updateAccount({
         action: "changePassword",
+        currentPassword,
         newPassword,
       }).unwrap();
 
       setStatus("success");
       setMessage("Password updated successfully!");
+      setCurrentPassword("");
       setNewPassword("");
     } catch (err: unknown) {
       if (
         typeof err === "object" &&
         err !== null &&
-        "status" in err &&
-        typeof (err as { status?: number }).status === "number" &&
-        (err as { status?: number }).status === 403
+        "data" in err &&
+        (err as { data?: { error?: string } }).data?.error
       ) {
         setStatus("error");
-        setMessage("Password change not allowed for Google accounts.");
-        return;
+        setMessage((err as { data: { error: string } }).data.error);
+      } else {
+        setStatus("error");
+        setMessage("Failed to update password. Please try again.");
       }
-
-      setStatus("error");
-      setMessage("Failed to update password. Please try again.");
     }
   };
 
@@ -88,6 +85,15 @@ export default function ChangePasswordCard() {
         title="Change Password"
       >
         <form onSubmit={handleSubmit} className="space-y-4">
+          <input
+            type="password"
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            placeholder="Current Password"
+            className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-gray-200 focus:border-yellow-400 outline-none"
+            required
+          />
+
           <input
             type="password"
             value={newPassword}

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { hash } from "bcryptjs";
+import { hash, compare } from "bcryptjs";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
@@ -70,13 +70,24 @@ export async function PATCH(req: Request) {
         );
       }
 
-      if (!newPassword) {
+      // ✅ Check for required fields
+      if (!currentPassword || !newPassword) {
         return NextResponse.json(
-          { error: "Missing new password" },
+          { error: "Current and new passwords are required." },
           { status: 400 }
         );
       }
 
+      // 🔐 Validate current password
+      const isValid = await compare(currentPassword, user.password);
+      if (!isValid) {
+        return NextResponse.json(
+          { error: "Current password is incorrect." },
+          { status: 403 }
+        );
+      }
+
+      // ✅ Hash and update new password
       const hashed = await hash(newPassword, 10);
 
       const updated = await prisma.user.update({
