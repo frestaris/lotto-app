@@ -8,12 +8,13 @@ const prisma = new PrismaClient();
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
 
-  if (!session?.user?.email) {
+  if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
+    select: { id: true, creditCents: true },
   });
 
   if (!user) {
@@ -24,7 +25,19 @@ export async function POST(req: Request) {
   const { gameId, numbers, specialNumbers, priceCents } = body;
 
   try {
-    // 1️⃣ Find the next upcoming draw for this game
+    // 🧮 Check for enough credits
+    if (user.creditCents < priceCents) {
+      return NextResponse.json(
+        {
+          error: "Insufficient credits. Please add more to continue.",
+          currentBalance: user.creditCents,
+          required: priceCents,
+        },
+        { status: 400 }
+      );
+    }
+
+    // 🎯 Find the next upcoming draw for this game
     const now = new Date();
     const upcomingDraw = await prisma.draw.findFirst({
       where: { gameId, drawDate: { gt: now } },
@@ -38,24 +51,53 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2️⃣ Create the ticket linked to that draw
-    const ticket = await prisma.ticket.create({
-      data: {
-        userId: user.id,
-        gameId,
-        drawId: upcomingDraw.id,
-        numbers,
-        specialNumbers,
-        priceCents,
-      },
-    });
-    // 3️⃣ Increment total sales for the draw (for jackpot growth)
-    await prisma.draw.update({
-      where: { id: upcomingDraw.id },
-      data: { totalSalesCents: { increment: priceCents } },
+    // 💳 Use transaction to ensure atomic balance + ticket creation
+    const result = await prisma.$transaction(async (tx) => {
+      // Deduct credits
+      const updatedUser = await tx.user.update({
+        where: { id: user.id },
+        data: {
+          creditCents: { decrement: priceCents },
+          transactions: {
+            create: {
+              type: "DEBIT",
+              amountCents: priceCents,
+              description: `Ticket purchase for game ${gameId}`,
+              reference: upcomingDraw.id,
+            },
+          },
+        },
+      });
+
+      // Create the ticket
+      const ticket = await tx.ticket.create({
+        data: {
+          userId: user.id,
+          gameId,
+          drawId: upcomingDraw.id,
+          numbers,
+          specialNumbers,
+          priceCents,
+        },
+      });
+
+      // Update draw’s total sales
+      await tx.draw.update({
+        where: { id: upcomingDraw.id },
+        data: { totalSalesCents: { increment: priceCents } },
+      });
+
+      return { ticket, updatedUser };
     });
 
-    return NextResponse.json(ticket, { status: 201 });
+    return NextResponse.json(
+      {
+        message: "Ticket purchased successfully",
+        ticket: result.ticket,
+        updatedBalance: result.updatedUser.creditCents,
+      },
+      { status: 201 }
+    );
   } catch (err) {
     if (err instanceof Error) {
       console.error("❌ Ticket creation failed:", err.message);

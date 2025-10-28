@@ -8,10 +8,16 @@ import { useUpdateAccountMutation } from "@/redux/api/accountApi";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
 import { updateCreditsSuccess } from "@/redux/slices/accountSlice";
 
-export default function AddCreditsCard() {
+interface AddCreditsCardProps {
+  credits?: number; // optional so it still works even if prop isn’t passed
+}
+
+export default function AddCreditsCard({ credits }: AddCreditsCardProps) {
   const dispatch = useAppDispatch();
   const account = useAppSelector((s) => s.account.account);
-  const credits = account?.creditCents ?? 0;
+
+  // If credits prop exists (from SettingsPage), use it; otherwise fallback to Redux
+  const currentCredits = credits ?? account?.creditCents ?? 0;
 
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState<number>(0);
@@ -64,7 +70,7 @@ export default function AddCreditsCard() {
       <GameCard onClick={() => setOpen(true)}>
         <Coins className="w-6 h-6 text-yellow-400 mb-2" />
         <span className="text-3xl font-extrabold text-yellow-400 block mb-2">
-          ${(credits / 100).toFixed(2)}
+          ${(currentCredits / 100).toFixed(2)}
         </span>
         <h3 className="text-sm text-gray-400">Available Credits</h3>
         <span className="text-yellow-400 font-semibold text-sm mt-2">

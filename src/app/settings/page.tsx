@@ -8,10 +8,14 @@ import EditEmailCard from "./components/EditEmailCard";
 import ChangePasswordCard from "./components/ChangePasswordCard";
 import AddCreditsCard from "./components/AddCreditsCard";
 import DeleteAccountCard from "./components/DeleteAccountCard";
+import { useAppSelector } from "@/redux/store";
 
 export default function SettingsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+
+  const { updatedBalance } = useAppSelector((state) => state.tickets);
+  const account = useAppSelector((state) => state.account?.account);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -30,6 +34,9 @@ export default function SettingsPage() {
     );
   }
 
+  const credits =
+    updatedBalance ?? account?.creditCents ?? session?.user?.creditCents ?? 0;
+
   return (
     <div className="min-h-[calc(100vh-65px)] bg-gradient-to-b from-[#0a0a0a] to-[#1c1c1c] text-white flex flex-col items-center justify-center">
       <div className="max-w-5xl w-full space-y-10 px-4 sm:px-6 lg:px-0">
@@ -46,7 +53,7 @@ export default function SettingsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-w-6xl w-full z-10">
           <EditEmailCard />
           <ChangePasswordCard />
-          <AddCreditsCard credits={session?.user?.creditCents || 0} />
+          <AddCreditsCard credits={credits} />
           <DeleteAccountCard />
         </div>
       </div>
