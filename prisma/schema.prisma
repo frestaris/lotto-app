@@ -7,26 +7,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ========================================
-// USER MODELS
-// ========================================
-
 model User {
-  id            String    @id @default(cuid())
+  id            String              @id @default(cuid())
   name          String?
-  email         String?   @unique
-  emailVerified DateTime?
+  email         String?             @unique
   image         String?
+  createdAt     DateTime            @default(now())
+  emailVerified DateTime?
   password      String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @default(now()) @updatedAt
+  updatedAt     DateTime            @default(now()) @updatedAt
+  creditCents   Int                 @default(0)
   accounts      Account[]
   sessions      Session[]
   tickets       Ticket[]
-
-  // Wallet system
-  creditCents       Int                   @default(0) 
-  transactions      WalletTransaction[]  
+  transactions  WalletTransaction[]
 }
 
 model Account {
@@ -42,8 +36,7 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
-    user              User    @relation(fields: [userId], references: [id], onDelete: Cascade) 
-
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -53,7 +46,7 @@ model Session {
   sessionToken String   @unique
   userId       String
   expires      DateTime
-  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade) 
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model VerificationToken {
@@ -64,106 +57,90 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-// 🆕 Wallet transaction log
 model WalletTransaction {
   id          String   @id @default(cuid())
   userId      String
-  type        String   // "CREDIT" | "DEBIT"
+  type        String
   amountCents Int
-  reference   String?  // drawId, ticketId, etc.
+  reference   String?
   description String?
   createdAt   DateTime @default(now())
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
-
-
-// ========================================
-// LOTTO MODELS
-// ========================================
 
 model Game {
-  id               String   @id @default(cuid())
-  slug             String   @unique
-  name             String
-  description      String?
-  iconName         String?
-  priceCents       Int      @default(200) // e.g., $2.00
-  mainPickCount    Int
-  mainRangeMin     Int      @default(1)
-  mainRangeMax     Int
-  specialPickCount Int      @default(0)
-  specialRangeMin  Int?
-  specialRangeMax  Int?
-  drawFrequency    String?
-  jackpotCurrency  String   @default("AUD")
-  isActive         Boolean  @default(true)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  draws   Draw[]
-  tickets Ticket[]
-
-  // Jackpot and division config
-  baseJackpotCents  Int      @default(500000000) 
-  jackpotGrowthPct  Float    @default(0.6)       
-  prizeDivisions    Json?    
-  currentJackpotCents  Int      @default(0)
-                  
-}
-
-
-enum DrawStatus {
-  UPCOMING
-  COMPLETED
+  id                  String   @id @default(cuid())
+  slug                String   @unique
+  name                String
+  description         String?
+  priceCents          Int      @default(200)
+  mainPickCount       Int
+  mainRangeMin        Int      @default(1)
+  mainRangeMax        Int
+  specialPickCount    Int      @default(0)
+  specialRangeMin     Int?
+  specialRangeMax     Int?
+  drawFrequency       String?
+  jackpotCurrency     String   @default("AUD")
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  baseJackpotCents    Int      @default(500000000)
+  jackpotGrowthPct    Float    @default(0.6)
+  prizeDivisions      Json?
+  currentJackpotCents Int      @default(0)
+  iconName            String?
+  draws               Draw[]
+  tickets             Ticket[]
 }
 
 model Draw {
-  id                    String      @id @default(cuid())
+  id                    String     @id @default(cuid())
   gameId                String
-  game                  Game        @relation(fields: [gameId], references: [id])
   drawNumber            Int
   drawDate              DateTime
   winningMainNumbers    Int[]
   winningSpecialNumbers Int[]
-  totalPayoutCents Int @default(0)
-  status                DrawStatus  @default(UPCOMING)
-  createdAt             DateTime    @default(now())
-  updatedAt             DateTime    @updatedAt
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+  status                DrawStatus @default(UPCOMING)
+  jackpotCents          Int        @default(0)
+  totalSalesCents       Int        @default(0)
+  winnersCount          Int?
+  divisionResults       Json?
+  totalPayoutCents      Int        @default(0)
+  game                  Game       @relation(fields: [gameId], references: [id])
+  tickets               Ticket[]
 
-  tickets Ticket[]
-
-  // Jackpot growth tracking
-  jackpotCents      Int       @default(0)
-  totalSalesCents   Int       @default(0)
-  winnersCount      Int?    
-
-  divisionResults Json?
-  
   @@index([gameId, status])
   @@index([gameId, drawDate])
 }
 
-enum TicketStatus {
-  PENDING
-  WON
-  LOST
-}
-
 model Ticket {
-  id             String        @id @default(cuid())
+  id             String       @id @default(cuid())
   userId         String
   gameId         String
   drawId         String
   numbers        Int[]
   specialNumbers Int[]
   priceCents     Int
-  status         TicketStatus  @default(PENDING)
-  payoutCents    Int?          @default(0) 
-  createdAt      DateTime      @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  game Game @relation(fields: [gameId], references: [id])
-  draw Draw @relation(fields: [drawId], references: [id], onDelete: Cascade)
+  payoutCents    Int?         @default(0)
+  createdAt      DateTime     @default(now())
+  status         TicketStatus @default(PENDING)
+  draw           Draw         @relation(fields: [drawId], references: [id], onDelete: Cascade)
+  game           Game         @relation(fields: [gameId], references: [id])
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([gameId, status])
+}
+
+enum DrawStatus {
+  UPCOMING
+  COMPLETED
+}
+
+enum TicketStatus {
+  PENDING
+  WON
+  LOST
 }

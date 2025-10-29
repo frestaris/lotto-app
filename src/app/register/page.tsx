@@ -33,9 +33,17 @@ export default function RegisterPage() {
       if (!res.ok) throw new Error(data.error || "Failed to register");
 
       setSuccess(true);
-      setFormData({ email: "", password: "" });
 
-      setTimeout(() => router.push("/login"), 1000);
+      // 🪄 Auto-login after successful registration
+      const loginRes = await signIn("credentials", {
+        redirect: false,
+        email: formData.email,
+        password: formData.password,
+      });
+
+      if (loginRes?.error) throw new Error("Login failed");
+
+      router.push("/");
     } catch (err: unknown) {
       if (err instanceof Error) setError(err.message);
       else setError("An unexpected error occurred");
@@ -46,7 +54,7 @@ export default function RegisterPage() {
 
   return (
     <AuthLayout
-      title="Create Your Account 🎟️"
+      title="Create Your Account"
       subtitle="Join Lotto App and start your lucky journey!"
     >
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -59,7 +67,7 @@ export default function RegisterPage() {
             value={formData.email}
             onChange={handleChange}
             required
-            className="w-full p-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            className="w-full p-1 sm:p-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400"
           />
         </div>
 
@@ -72,7 +80,7 @@ export default function RegisterPage() {
             value={formData.password}
             onChange={handleChange}
             required
-            className="w-full p-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            className="w-full p-1 sm:p-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400"
           />
         </div>
 
@@ -86,24 +94,25 @@ export default function RegisterPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3 rounded-lg font-semibold text-[#0f172a] bg-gradient-to-r from-yellow-400 to-amber-500 hover:opacity-90 transition-all disabled:opacity-50"
+          className="w-full sm:py-3 py-1 rounded-lg font-semibold text-[#0f172a] bg-gradient-to-r from-yellow-400 to-amber-500 hover:opacity-90 transition-all disabled:opacity-50 hover:cursor-pointer"
         >
           {loading ? "Creating..." : "Create Account"}
         </button>
 
-        <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-white/20"></span>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="bg-transparent px-2 text-gray-300">Or continue with</span>
-          </div>
+        <div className="flex items-center justify-center ">
+          <span className="flex items-center w-full max-w-xs">
+            <span className="flex-grow border-t border-white/20"></span>
+            <span className="mx-3 text-gray-300 text-sm whitespace-nowrap">
+              Or continue with
+            </span>
+            <span className="flex-grow border-t border-white/20"></span>
+          </span>
         </div>
 
         <button
           type="button"
           onClick={() => signIn("google")}
-          className="w-full py-3 rounded-lg font-semibold text-white bg-[#ea4335] hover:bg-red-600 transition-all flex items-center justify-center gap-2"
+          className="w-full sm:py-3 py-1 rounded-lg font-semibold text-white bg-[#ea4335] hover:bg-red-600 transition-all flex items-center justify-center gap-2 hover:cursor-pointer"
         >
           <svg
             className="w-5 h-5"
