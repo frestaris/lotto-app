@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 import { Coins, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import GameCard from "@/components/GameCard";
 import Modal from "@/components/Modal";
@@ -13,6 +14,7 @@ interface AddCreditsCardProps {
 }
 
 export default function AddCreditsCard({ credits }: AddCreditsCardProps) {
+  const { update } = useSession();
   const dispatch = useAppDispatch();
   const account = useAppSelector((s) => s.account.account);
 
@@ -46,14 +48,16 @@ export default function AddCreditsCard({ credits }: AddCreditsCardProps) {
         addCredits: amount,
       }).unwrap();
 
-      // ✅ Update Redux balance
-      dispatch(updateCreditsSuccess(amount));
+      // ✅ Update Redux balance instantly
+      dispatch(updateCreditsSuccess(Math.round(amount * 100)));
+
+      // ✅ Refresh NextAuth session from DB (calls trigger="update" on jwt callback)
+      await update({ trigger: "update" });
 
       setStatus("success");
       setMessage(`Successfully added $${amount.toFixed(2)} credits!`);
       setAmount(0);
 
-      // ✅ Close modal after a short delay
       setTimeout(() => setOpen(false), 1500);
     } catch (err: unknown) {
       console.log(err);

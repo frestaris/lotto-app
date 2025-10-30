@@ -100,7 +100,8 @@ export async function PATCH(req: Request) {
 
     // 💰 Add Credits
     if (action === "addCredits") {
-      if (!addCredits || addCredits <= 0) {
+      const addCents = Math.max(0, Math.floor(addCredits * 100));
+      if (!addCents) {
         return NextResponse.json(
           { error: "Invalid credit amount" },
           { status: 400 }
@@ -110,11 +111,11 @@ export async function PATCH(req: Request) {
       const updated = await prisma.user.update({
         where: { id: user.id },
         data: {
-          creditCents: { increment: Math.floor(addCredits * 100) },
+          creditCents: { increment: addCents },
           transactions: {
             create: {
               type: "CREDIT",
-              amountCents: Math.floor(addCredits * 100),
+              amountCents: addCents,
               description: "Manual top-up via Settings",
             },
           },

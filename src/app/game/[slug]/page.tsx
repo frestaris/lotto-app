@@ -15,7 +15,7 @@ export default function GameDetailsPage() {
 
   if (error)
     return (
-      <div className="min-h-screen flex items-center justify-center text-red-400">
+      <div className="min-h-[calc(100vh-65px)] flex items-center justify-center text-red-400">
         Game not found.
       </div>
     );

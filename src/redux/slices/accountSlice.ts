@@ -21,15 +21,18 @@ const accountSlice = createSlice({
   initialState,
   reducers: {
     setAccount: (state, action: PayloadAction<AccountState["account"]>) => {
-      state.account = action.payload;
+      state.account = {
+        ...state.account,
+        ...action.payload,
+      };
     },
     updateEmailSuccess: (state, action: PayloadAction<string>) => {
       if (state.account) state.account.email = action.payload;
     },
-    updateCreditsSuccess: (state, action: PayloadAction<number>) => {
-      if (state.account)
-        state.account.creditCents =
-          (state.account.creditCents || 0) + Math.floor(action.payload * 100);
+    updateCreditsSuccess: (state, action) => {
+      if (state.account) {
+        state.account.creditCents += action.payload;
+      }
     },
   },
 });

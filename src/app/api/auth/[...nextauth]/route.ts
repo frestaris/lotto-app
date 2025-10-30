@@ -20,7 +20,6 @@ interface AuthUser {
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
-
   providers: [
     // ✅ Google Login
     GoogleProvider({
@@ -49,7 +48,6 @@ export const authOptions: NextAuthOptions = {
         const isValid = await compare(credentials.password, user.password);
         if (!isValid) throw new Error("Invalid password");
 
-        // ✅ Generate our own short-lived token (1h expiry)
         const accessToken = jwt.sign(
           { userId: user.id, email: user.email },
           process.env.NEXTAUTH_SECRET!,
@@ -71,28 +69,36 @@ export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
 
   callbacks: {
-    async jwt({ token, user, account }) {
-      // 🧩 Attach user info when logging in
+    async jwt({ token, user, account, trigger }) {
       if (user) {
         token.user = user as AuthUser;
         token.user.provider = account?.provider || "credentials";
       }
 
-      // 🔑 Google access token
-      if (account?.access_token) {
-        token.accessToken = account.access_token;
-      }
+      // 🪄 When update() is called — refetch latest user data
+      if (trigger === "update" && token.user?.id) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.user.id },
+          select: {
+            creditCents: true,
+            name: true,
+            email: true,
+            image: true,
+          },
+        });
 
-      // 💾 Custom access token for credentials
-      if (user && (user as AuthUser).accessToken) {
-        token.accessToken = (user as AuthUser).accessToken;
+        if (dbUser) {
+          token.user.creditCents = dbUser.creditCents;
+          token.user.name = dbUser.name;
+          token.user.email = dbUser.email;
+          token.user.image = dbUser.image;
+        }
       }
 
       return token;
     },
 
     async session({ session, token }) {
-      // ✅ Always use token.user.id, not lookup by email
       if (token?.user) {
         session.user.id = token.user.id;
         session.user.name = token.user.name;
@@ -101,11 +107,6 @@ export const authOptions: NextAuthOptions = {
         session.user.creditCents = token.user.creditCents;
         session.user.provider = token.user.provider || "credentials";
       }
-
-      if (token?.accessToken) {
-        session.user.accessToken = token.accessToken as string;
-      }
-
       return session;
     },
   },

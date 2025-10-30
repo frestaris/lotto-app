@@ -2,22 +2,31 @@
 
 import { useState, useEffect } from "react";
 import { signIn, useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import AuthLayout from "@/components/AuthLayout";
 import Spinner from "@/components/Spinner";
 
 export default function LoginPage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/"; 
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
 
+  // ✅ Redirect if already logged in
   useEffect(() => {
     if (status === "authenticated") {
-      router.replace("/");
+      router.replace(callbackUrl);
     }
-  }, [status, session, router]);
+  }, [status, callbackUrl, router]);
+
+  // ✅ Show spinner while loading session
+  if (status === "loading") {
+    return <Spinner variant="accent" size="lg" fullScreen />;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,14 +36,15 @@ export default function LoginPage() {
       redirect: false,
       email,
       password,
+      callbackUrl,
     });
 
-    if (res?.error) setError("Invalid email or password");
-    else router.push("/");
+    if (res?.error) {
+      setError("Invalid email or password");
+    } else {
+      router.push(callbackUrl);
+    }
   };
-
-  if (status === "loading")
-    return <Spinner variant="accent" size="lg" fullScreen />;
 
   return (
     <AuthLayout
@@ -42,6 +52,7 @@ export default function LoginPage() {
       subtitle="Sign in to continue your lucky journey!"
     >
       <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Email */}
         <div>
           <label className="text-sm text-gray-200 mb-1 block">Email</label>
           <input
@@ -54,6 +65,7 @@ export default function LoginPage() {
           />
         </div>
 
+        {/* Password */}
         <div>
           <label className="text-sm text-gray-200 mb-1 block">Password</label>
           <input
@@ -68,13 +80,15 @@ export default function LoginPage() {
 
         {error && <p className="text-red-300 text-sm text-center">{error}</p>}
 
+        {/* Sign In button */}
         <button
           type="submit"
-          className="w-full sm:py-3 py-1  rounded-lg font-semibold text-[#0f172a] bg-gradient-to-r from-yellow-400 to-amber-500 hover:opacity-90 transition-all hover:cursor-pointer"
+          className="w-full sm:py-3 py-1 rounded-lg font-semibold text-[#0f172a] bg-gradient-to-r from-yellow-400 to-amber-500 hover:opacity-90 transition-all hover:cursor-pointer"
         >
           Sign In
         </button>
 
+        {/* Divider */}
         <div className="flex items-center justify-center ">
           <span className="flex items-center w-full max-w-xs">
             <span className="flex-grow border-t border-white/20"></span>
@@ -85,9 +99,10 @@ export default function LoginPage() {
           </span>
         </div>
 
+        {/* Google Sign-In */}
         <button
           type="button"
-          onClick={() => signIn("google")}
+          onClick={() => signIn("google", { callbackUrl })}
           className="w-full sm:py-3 py-1 rounded-lg font-semibold text-white bg-[#ea4335] hover:bg-red-600 transition-all flex items-center justify-center gap-2 hover:cursor-pointer"
         >
           <svg
