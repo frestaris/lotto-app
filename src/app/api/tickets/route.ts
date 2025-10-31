@@ -1,19 +1,38 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 import { PrismaClient } from "@prisma/client";
-import { authOptions } from "../auth/[...nextauth]/route";
+import jwt, { JwtPayload } from "jsonwebtoken";
 
 const prisma = new PrismaClient();
 
-export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
+interface DecodedToken extends JwtPayload {
+  userId?: string;
+}
 
-  if (!session?.user?.id) {
+export async function POST(req: Request) {
+  const authHeader = req.headers.get("authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const token = authHeader.split(" ")[1];
+  let userId: string | undefined;
+
+  try {
+    const decoded = jwt.verify(
+      token,
+      process.env.NEXTAUTH_SECRET!
+    ) as DecodedToken;
+    userId = decoded.userId;
+  } catch {
+    return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  }
+
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
+    where: { id: userId },
     select: { id: true, creditCents: true },
   });
 
@@ -25,7 +44,6 @@ export async function POST(req: Request) {
   const { gameId, numbers, specialNumbers, priceCents } = body;
 
   try {
-    // 🧮 Check for enough credits
     if (user.creditCents < priceCents) {
       return NextResponse.json(
         {
@@ -37,7 +55,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // 🎯 Find the next upcoming draw for this game
     const now = new Date();
     const upcomingDraw = await prisma.draw.findFirst({
       where: { gameId, drawDate: { gt: now } },
@@ -51,9 +68,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // 💳 Use transaction to ensure atomic balance + ticket creation
     const result = await prisma.$transaction(async (tx) => {
-      // Deduct credits
       const updatedUser = await tx.user.update({
         where: { id: user.id },
         data: {
@@ -69,7 +84,6 @@ export async function POST(req: Request) {
         },
       });
 
-      // Create the ticket
       const ticket = await tx.ticket.create({
         data: {
           userId: user.id,
@@ -81,7 +95,6 @@ export async function POST(req: Request) {
         },
       });
 
-      // Update draw’s total sales
       await tx.draw.update({
         where: { id: upcomingDraw.id },
         data: { totalSalesCents: { increment: priceCents } },
@@ -99,11 +112,6 @@ export async function POST(req: Request) {
       { status: 201 }
     );
   } catch (err) {
-    if (err instanceof Error) {
-      console.error("❌ Ticket creation failed:", err.message);
-      return NextResponse.json({ error: err.message }, { status: 500 });
-    }
-
     console.error("❌ Ticket creation failed:", err);
     return NextResponse.json(
       { error: "Failed to create ticket" },

@@ -1,15 +1,12 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { baseApi } from "../api/baseApi";
 
-export const accountApi = createApi({
-  reducerPath: "accountApi",
-  baseQuery: fetchBaseQuery({ baseUrl: "/api" }),
-  tagTypes: ["Account"],
+export const accountApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     updateAccount: builder.mutation({
       query: (body) => ({
         url: "/account",
         method: "PATCH",
-        body, // { action: "editEmail" | "changePassword" | "addCredits", ... }
+        data: body,
       }),
       invalidatesTags: ["Account"],
     }),
@@ -22,6 +19,3 @@ export const accountApi = createApi({
     }),
   }),
 });
-
-export const { useUpdateAccountMutation, useDeleteAccountMutation } =
-  accountApi;

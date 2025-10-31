@@ -33,6 +33,6 @@ const axiosBaseQuery =
 export const baseApi = createApi({
   reducerPath: "api",
   baseQuery: axiosBaseQuery(),
-  tagTypes: ["Game", "Draw", "Ticket"],
+  tagTypes: ["Game", "Draw", "Ticket", "Account"],
   endpoints: () => ({}),
 });

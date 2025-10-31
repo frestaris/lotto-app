@@ -70,12 +70,20 @@ export const authOptions: NextAuthOptions = {
 
   callbacks: {
     async jwt({ token, user, account, trigger }) {
+      // On first login
       if (user) {
         token.user = user as AuthUser;
         token.user.provider = account?.provider || "credentials";
+
+        // Always sign an internal app token for API auth
+        token.user.accessToken = jwt.sign(
+          { userId: user.id, email: user.email },
+          process.env.NEXTAUTH_SECRET!,
+          { expiresIn: "1h" }
+        );
       }
 
-      // 🪄 When update() is called — refetch latest user data
+      // Handle update trigger
       if (trigger === "update" && token.user?.id) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.user.id },
@@ -106,6 +114,7 @@ export const authOptions: NextAuthOptions = {
         session.user.image = token.user.image;
         session.user.creditCents = token.user.creditCents;
         session.user.provider = token.user.provider || "credentials";
+        session.user.accessToken = token.user.accessToken;
       }
       return session;
     },

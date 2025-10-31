@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
+import api from "@/lib/axios";
 
 export interface TicketData {
   gameId: string;
@@ -40,40 +41,26 @@ const initialState: TicketState = {
 };
 
 export const submitTickets = createAsyncThunk<
-  TicketResponse, // return type
-  TicketData[], // arg type
+  TicketResponse,
+  TicketData[],
   { state: RootState; rejectValue: string }
 >("tickets/submitTickets", async (tickets, { rejectWithValue }) => {
   try {
     let lastResponse: TicketResponse | null = null;
 
-    // 🧮 process each ticket individually
     for (const t of tickets) {
-      const res = await fetch("/api/tickets", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(t),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(
-          data.error || `Failed to save ticket: ${res.statusText}`
-        );
-      }
-
-      lastResponse = data;
+      const res = await api.post<TicketResponse>("/tickets", t);
+      lastResponse = res.data;
     }
 
     if (!lastResponse) throw new Error("No response from server");
 
-    // ✅ Return the final API response (includes updatedBalance)
     return lastResponse;
-  } catch (err) {
-    if (err instanceof Error) {
-      return rejectWithValue(err.message);
+  } catch (error) {
+    if (error instanceof Error) {
+      return rejectWithValue(error.message);
     }
+
     return rejectWithValue(
       "An unknown error occurred while submitting tickets"
     );
