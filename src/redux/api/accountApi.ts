@@ -19,3 +19,6 @@ export const accountApi = baseApi.injectEndpoints({
     }),
   }),
 });
+
+export const { useUpdateAccountMutation, useDeleteAccountMutation } =
+  accountApi;
