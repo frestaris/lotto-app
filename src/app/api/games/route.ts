@@ -1,24 +1,25 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 
-const prisma = new PrismaClient();
-
-/**
- * GET /api/games
- * Returns all active lotto games with their current live jackpot + prize divisions
- */
 export async function GET() {
   try {
     const games = await prisma.game.findMany({
       where: { isActive: true },
       orderBy: { name: "asc" },
-      include: {
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        iconName: true,
+        priceCents: true,
+        drawFrequency: true,
+        currentJackpotCents: true,
+        baseJackpotCents: true,
         draws: {
           where: { status: "UPCOMING" },
           orderBy: { drawDate: "asc" },
           take: 1,
           select: {
-            id: true,
             jackpotCents: true,
             drawDate: true,
           },
@@ -26,38 +27,28 @@ export async function GET() {
       },
     });
 
-    const formattedGames = games.map((g) => ({
+    const formatted = games.map((g) => ({
       id: g.id,
       slug: g.slug,
       name: g.name,
-      description: g.description,
       iconName: g.iconName,
       priceCents: g.priceCents,
       drawFrequency: g.drawFrequency,
-      jackpotCurrency: g.jackpotCurrency,
-      isActive: g.isActive,
-      createdAt: g.createdAt,
-      updatedAt: g.updatedAt,
+      nextDrawDate: g.draws[0]?.drawDate ?? null,
 
-      // include these two explicitly
-      baseJackpotCents: g.baseJackpotCents,
-      currentJackpotCents: g.currentJackpotCents,
-
-      // 🧮 derived live jackpot
+      // Always fallback
       jackpotCents:
-        g.draws[0]?.jackpotCents ?? g.currentJackpotCents ?? g.baseJackpotCents,
-
-      prizeDivisions:
-        typeof g.prizeDivisions === "string"
-          ? JSON.parse(g.prizeDivisions)
-          : g.prizeDivisions,
+        g.draws?.[0]?.jackpotCents ??
+        g.currentJackpotCents ??
+        g.baseJackpotCents ??
+        0,
     }));
 
-    return NextResponse.json(formattedGames, { status: 200 });
-  } catch (error) {
-    console.error("❌ Error fetching games:", error);
+    return NextResponse.json(formatted, { status: 200 });
+  } catch (err) {
+    console.error("❌ Error fetching light games:", err);
     return NextResponse.json(
-      { error: "Failed to fetch games" },
+      { error: "Failed to load games" },
       { status: 500 }
     );
   }

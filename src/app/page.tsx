@@ -1,24 +1,17 @@
 "use client";
 
-import { useGetAllGamesQuery } from "@/redux/slices/gameApi";
+import { useGetAllGamesQuery, usePrefetch } from "@/redux/slices/gameApi";
 import { getGameColor } from "@/utils/getGameColor";
 import * as Icons from "lucide-react";
 import Link from "next/link";
 import type { Game } from "@/types/game";
-import Spinner from "@/components/Spinner";
 import GameCard from "@/components/GameCard";
-import { usePrefetch } from "@/redux/slices/gameApi";
+import Skeleton from "@/components/Skeleton";
 
 export default function HomePage() {
   const { data: games = [], isLoading, error } = useGetAllGamesQuery();
-
   const prefetchGame = usePrefetch("getGameBySlug");
   const prefetchDraws = usePrefetch("getDrawsByGameId");
-
-  if (isLoading)
-    return (
-      <Spinner message="Loading games…" variant="accent" size="lg" fullScreen />
-    );
 
   if (error)
     return (
@@ -34,7 +27,6 @@ export default function HomePage() {
 
   return (
     <div className="relative text-white bg-gradient-to-b from-[#0a0a0a] via-[#0f0f0f] to-[#1a1a1a] overflow-hidden">
-      {/* HERO SECTION */}
       <section
         className="flex flex-col justify-between items-center text-center px-6 py-12 gap-10"
         style={{ minHeight: "calc(100vh - 72px)" }}
@@ -66,59 +58,67 @@ export default function HomePage() {
 
         {/* GAME CARDS GRID */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-w-6xl w-full z-10">
-          {games.slice(0, 8).map((game: Game) => {
-            const Icon =
-              (Icons[
-                game.iconName as keyof typeof Icons
-              ] as React.ElementType) || Icons.Ticket;
+          {isLoading
+            ? Array.from({ length: 4 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="p-6 rounded-xl bg-white/5 border border-white/10 space-y-3 animate-pulse"
+                >
+                  <Skeleton height="h-12" width="w-12" className="mx-auto" />
+                  <Skeleton height="h-5" width="w-3/4 mx-auto" />
+                  <Skeleton height="h-6" width="w-1/2 mx-auto" />
+                  <Skeleton height="h-4" width="w-2/3 mx-auto" />
+                  <Skeleton height="h-3" width="w-1/3 mx-auto" />
+                </div>
+              ))
+            : games.slice(0, 8).map((game: Game) => {
+                const Icon =
+                  (Icons[
+                    game.iconName as keyof typeof Icons
+                  ] as React.ElementType) || Icons.Ticket;
 
-            return (
-              <Link
-                key={game.id}
-                href={`/game/${game.slug}`}
-                onMouseEnter={() => {
-                  prefetchGame(game.slug);
-                  prefetchDraws(game.id);
-                }}
-              >
-                <GameCard>
-                  {/* Icon */}
-                  <div className="transition-transform duration-300 group-hover:scale-110">
-                    <Icon
-                      className={`w-12 h-12 ${getGameColor(
-                        game.slug
-                      )} drop-shadow-[0_0_8px_rgba(255,215,0,0.5)]`}
-                    />
-                  </div>
+                return (
+                  <Link
+                    key={game.id}
+                    href={`/game/${game.slug}`}
+                    onMouseEnter={() => {
+                      prefetchGame(game.slug);
+                      prefetchDraws(game.id);
+                    }}
+                  >
+                    <GameCard>
+                      <div className="transition-transform duration-300 group-hover:scale-110">
+                        <Icon
+                          className={`w-12 h-12 ${getGameColor(
+                            game.slug
+                          )} drop-shadow-[0_0_8px_rgba(255,215,0,0.5)]`}
+                        />
+                      </div>
 
-                  {/* Name */}
-                  <h2 className="text-lg font-semibold group-hover:text-yellow-400 transition-colors duration-200">
-                    {game.name}
-                  </h2>
+                      <h2 className="text-lg font-semibold group-hover:text-yellow-400 transition-colors duration-200">
+                        {game.name}
+                      </h2>
 
-                  {/* Jackpot */}
-                  {game.currentJackpotCents && (
-                    <p className="text-xl font-bold text-yellow-400 transition-opacity duration-300 group-hover:opacity-90">
-                      $
-                      {(game.currentJackpotCents / 100).toLocaleString(
-                        undefined,
-                        {
-                          maximumFractionDigits: 0,
-                        }
+                      {game.jackpotCents && (
+                        <p className="text-xl font-bold text-yellow-400 transition-opacity duration-300 group-hover:opacity-90">
+                          $
+                          {(game.jackpotCents / 100).toLocaleString(undefined, {
+                            maximumFractionDigits: 0,
+                          })}
+                        </p>
                       )}
-                    </p>
-                  )}
 
-                  {/* Draw info */}
-                  <p className="text-sm text-gray-400">{game.drawFrequency}</p>
-                  <div className="h-[3px] w-1/2 bg-yellow-400/30 mt-2 rounded-full"></div>
-                  <p className="text-xs text-gray-500">
-                    ${(game.priceCents / 100).toFixed(2)} per ticket
-                  </p>
-                </GameCard>
-              </Link>
-            );
-          })}
+                      <p className="text-sm text-gray-400">
+                        {game.drawFrequency}
+                      </p>
+                      <div className="h-[3px] w-1/2 bg-yellow-400/30 mt-2 rounded-full"></div>
+                      <p className="text-xs text-gray-500">
+                        ${(game.priceCents / 100).toFixed(2)} per ticket
+                      </p>
+                    </GameCard>
+                  </Link>
+                );
+              })}
         </div>
       </section>
     </div>

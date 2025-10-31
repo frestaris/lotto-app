@@ -16,8 +16,13 @@ export interface Game {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+
+  jackpotCents?: number | null;
+  nextDrawDate?: string | null;
+
   currentJackpotCents?: number | null;
   baseJackpotCents?: number | null;
+
   prizeDivisions?:
     | {
         matchMain: number;
