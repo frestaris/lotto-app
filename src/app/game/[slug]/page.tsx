@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useGetGameBySlugQuery } from "@/redux/slices/gameApi";
+import { useGetGameFullQuery } from "@/redux/api/gameApi";
 import { useState } from "react";
 import { Draw } from "@/types/game";
 import GameHeader from "./components/GameHeader";
@@ -10,7 +10,7 @@ import Skeleton from "@/components/Skeleton";
 
 export default function GameDetailsPage() {
   const { slug } = useParams() as { slug: string };
-  const { data: game, isLoading, error } = useGetGameBySlugQuery(slug);
+  const { data: game, isLoading, error } = useGetGameFullQuery(slug);
   const [selectedDraw, setSelectedDraw] = useState<Draw | null>(null);
 
   if (error)

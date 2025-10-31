@@ -1,6 +1,6 @@
 "use client";
 
-import { useGetAllGamesQuery, usePrefetch } from "@/redux/slices/gameApi";
+import { useGetAllGamesQuery, usePrefetch } from "@/redux/api/gameApi";
 import { getGameColor } from "@/utils/getGameColor";
 import * as Icons from "lucide-react";
 import Link from "next/link";
@@ -10,8 +10,7 @@ import Skeleton from "@/components/Skeleton";
 
 export default function HomePage() {
   const { data: games = [], isLoading, error } = useGetAllGamesQuery();
-  const prefetchGame = usePrefetch("getGameBySlug");
-  const prefetchDraws = usePrefetch("getDrawsByGameId");
+  const prefetchGame = usePrefetch("getGameFull");
 
   if (error)
     return (
@@ -83,7 +82,6 @@ export default function HomePage() {
                     href={`/game/${game.slug}`}
                     onMouseEnter={() => {
                       prefetchGame(game.slug);
-                      prefetchDraws(game.id);
                     }}
                   >
                     <GameCard>

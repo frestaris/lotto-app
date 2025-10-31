@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useSession } from "next-auth/react";
-import { useGetUserTicketsQuery } from "@/redux/slices/gameApi";
+import { useGetUserTicketsQuery } from "@/redux/api/gameApi";
 import { groupTicketsByMonth } from "@/utils/groupTicketsByMonth";
 import EmptyState from "./components/EmptyState";
 import MonthSelector from "./components/MonthSelector";

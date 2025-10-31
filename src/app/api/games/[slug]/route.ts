@@ -1,41 +1,57 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 
-const prisma = new PrismaClient();
-
-/**
- * GET /api/games/[slug]
- * Returns a single game by its slug
- */
 export async function GET(
-  req: Request,
+  _req: Request,
   context: { params: Promise<{ slug: string }> }
 ) {
-  const { slug } = await context.params;
+  const { slug } = await context.params; // ✅ must await in Next.js 15+
 
   try {
     const game = await prisma.game.findUnique({
       where: { slug },
+      include: {
+        draws: {
+          orderBy: { drawDate: "asc" },
+          take: 10,
+          select: {
+            id: true,
+            drawNumber: true,
+            drawDate: true,
+            status: true,
+            jackpotCents: true,
+            winningMainNumbers: true,
+            winningSpecialNumbers: true,
+            divisionResults: true,
+          },
+        },
+      },
     });
 
-    if (!game) {
+    if (!game)
       return NextResponse.json({ error: "Game not found" }, { status: 404 });
-    }
 
-    // ✅ Parse prizeDivisions JSON if stored as a string
-    let prizeDivisions = null;
-    if (game.prizeDivisions) {
-      try {
-        prizeDivisions =
-          typeof game.prizeDivisions === "string"
-            ? JSON.parse(game.prizeDivisions)
-            : game.prizeDivisions;
-      } catch {
-        console.warn("⚠️ Failed to parse prizeDivisions JSON");
-      }
-    }
+    const formatted = {
+      ...game,
+      prizeDivisions:
+        typeof game.prizeDivisions === "string"
+          ? JSON.parse(game.prizeDivisions)
+          : game.prizeDivisions,
+      draws: game.draws.map((d) => ({
+        ...d,
+        divisionResults:
+          typeof d.divisionResults === "string"
+            ? JSON.parse(d.divisionResults)
+            : d.divisionResults,
+      })),
+      jackpotCents:
+        game.draws.find((d) => d.status === "UPCOMING")?.jackpotCents ??
+        game.currentJackpotCents ??
+        game.baseJackpotCents ??
+        0,
+    };
 
-    return NextResponse.json({ ...game, prizeDivisions }, { status: 200 });
+    return NextResponse.json(formatted, { status: 200 });
   } catch (error) {
     console.error("❌ Error fetching game:", error);
     return NextResponse.json(

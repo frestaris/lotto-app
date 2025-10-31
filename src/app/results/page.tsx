@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import * as Icons from "lucide-react";
-import { useGetLatestDrawsQuery } from "@/redux/slices/gameApi";
+import { useGetLatestDrawsQuery } from "@/redux/api/gameApi";
 import { getGameColor } from "@/utils/getGameColor";
 import Spinner from "@/components/Spinner";
 import GameCard from "@/components/GameCard";

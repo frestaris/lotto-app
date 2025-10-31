@@ -2,21 +2,18 @@
 
 import { useParams } from "next/navigation";
 import {
-  useGetGameBySlugQuery,
-  useGetDrawsByGameIdQuery,
   useGetTicketsByDrawIdQuery,
-} from "@/redux/slices/gameApi";
-import { useState, useEffect } from "react";
+  useGetGameFullQuery,
+} from "@/redux/api/gameApi";
+import { useState, useEffect, useMemo } from "react";
 import * as Icons from "lucide-react";
-import { getGameColor } from "@/utils/getGameColor"; // ✅ import your color helper
+import { getGameColor } from "@/utils/getGameColor";
 import type { Draw } from "@/types/game";
 
 export default function GameResultsPage() {
   const { slug } = useParams() as { slug: string };
-  const { data: game } = useGetGameBySlugQuery(slug);
-  const { data: draws = [] } = useGetDrawsByGameIdQuery(game?.id ?? "", {
-    skip: !game?.id,
-  });
+  const { data: game } = useGetGameFullQuery(slug);
+  const draws = useMemo(() => game?.draws ?? [], [game?.draws]);
 
   const [selectedDraw, setSelectedDraw] = useState<Draw | null>(null);
   const drawId = selectedDraw?.id ?? "";
@@ -27,7 +24,6 @@ export default function GameResultsPage() {
   });
   const divisionResults = ticketsData?.divisionResults ?? [];
 
-  // 🧭 Choose the most recent completed draw or next upcoming one
   useEffect(() => {
     if (draws.length) {
       const sorted = [...draws].sort(

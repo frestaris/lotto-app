@@ -9,28 +9,30 @@ export interface DrawWithResults extends Draw {
   divisionResults?: DivisionResult[] | null;
 }
 
+/**
+ * ✅ Extended Game type to include its draws directly
+ */
+export interface GameWithDraws extends Game {
+  draws: DrawWithResults[];
+  jackpotCents: number;
+}
+
 export const gameApi = baseApi.injectEndpoints({
   overrideExisting: true,
   endpoints: (builder) => ({
-    // 🎯 All games
+    // 🎯 Lightweight games (homepage)
     getAllGames: builder.query<Game[], void>({
-      query: () => ({ url: "/games" }),
+      query: () => ({ url: "/games" }), // your new lightweight route
       providesTags: ["Game"],
     }),
 
-    // 🎯 Game by slug
-    getGameBySlug: builder.query<Game, string>({
-      query: (slug) => ({ url: `/games/${slug}` }),
-      providesTags: ["Game"],
+    // 🎯 Full game details (includes draws + prize divisions)
+    getGameFull: builder.query<GameWithDraws, string>({
+      query: (slug) => ({ url: `/games/${slug}` }), // your new merged endpoint
+      providesTags: ["Game", "Draw"],
     }),
 
-    // 🗓️ Draws for a specific game (now includes divisionResults)
-    getDrawsByGameId: builder.query<DrawWithResults[], string>({
-      query: (gameId) => ({ url: `/draws/game/${gameId}` }),
-      providesTags: ["Draw"],
-    }),
-
-    // 🆕 Latest draws (home page / dashboard)
+    // 🆕 Latest draws (dashboard / results)
     getLatestDraws: builder.query<LatestDraw[], void>({
       query: () => ({ url: "/draws/latest" }),
       providesTags: ["Draw"],
@@ -68,7 +70,7 @@ export const gameApi = baseApi.injectEndpoints({
       invalidatesTags: ["Ticket"],
     }),
 
-    // 🎟️ Tickets by draw (still useful for user lists)
+    // 🎟️ Tickets by draw (used for results)
     getTicketsByDrawId: builder.query<
       { tickets: UserTicket[]; divisionResults: DivisionResult[] },
       string
@@ -81,12 +83,11 @@ export const gameApi = baseApi.injectEndpoints({
 
 export const {
   useGetAllGamesQuery,
-  useGetGameBySlugQuery,
-  useGetDrawsByGameIdQuery,
-  useCreateTicketMutation,
-  useGetUserTicketsQuery,
+  useGetGameFullQuery,
   useGetLatestDrawsQuery,
+  useGetUserTicketsQuery,
   useGetUserTicketsDetailedQuery,
+  useCreateTicketMutation,
   useGetTicketsByDrawIdQuery,
   usePrefetch,
 } = gameApi;

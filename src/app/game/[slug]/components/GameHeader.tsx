@@ -3,13 +3,13 @@
 import { useState, useEffect, useMemo } from "react";
 import * as Icons from "lucide-react";
 import { CalendarDays, ChevronDown, CheckCircle2 } from "lucide-react";
-import type { Game, Draw } from "@/types/game";
-import { useGetDrawsByGameIdQuery } from "@/redux/slices/gameApi";
+import type { GameWithDraws } from "@/redux/api/gameApi";
+import type { Draw } from "@/types/game";
 import { getGameColor } from "@/utils/getGameColor";
 import Spinner from "@/components/Spinner";
 
 interface GameHeaderProps {
-  game: Game;
+  game: GameWithDraws;
   selectedDraw: Draw | null;
   setSelectedDraw: React.Dispatch<React.SetStateAction<Draw | null>>;
 }
@@ -21,12 +21,8 @@ export default function GameHeader({
 }: GameHeaderProps) {
   const [showCalendar, setShowCalendar] = useState(false);
 
-  const { data: draws = [], isLoading } = useGetDrawsByGameIdQuery(game.id) as {
-    data: Draw[] | undefined;
-    isLoading: boolean;
-  };
+  const draws = useMemo(() => game.draws ?? [], [game.draws]);
 
-  // Filter and sort upcoming draws
   const upcomingDraws = useMemo(() => {
     const now = new Date();
     return draws
@@ -65,6 +61,7 @@ export default function GameHeader({
     isNextDraw ? (
       `$${(
         (currentDraw.jackpotCents ??
+          game.jackpotCents ??
           game.currentJackpotCents ??
           game.baseJackpotCents ??
           0) / 100
@@ -100,7 +97,7 @@ export default function GameHeader({
             <h2 className="text-lg font-semibold text-gray-200">
               {displayDrawDate || "Loading date..."}
             </h2>
-            {!isLoading && upcomingDraws.length > 0 && (
+            {upcomingDraws.length > 0 && (
               <button
                 onClick={() => setShowCalendar((p) => !p)}
                 className="flex items-center gap-1 px-2 py-1 border border-white/20 rounded-md text-gray-400 hover:text-yellow-400 hover:border-yellow-400 transition cursor-pointer"
@@ -175,6 +172,7 @@ export default function GameHeader({
                         Jackpot: $
                         {(
                           (d.jackpotCents ??
+                            game.jackpotCents ??
                             game.currentJackpotCents ??
                             game.baseJackpotCents ??
                             0) / 100
