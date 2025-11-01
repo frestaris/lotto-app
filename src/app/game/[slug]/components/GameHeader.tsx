@@ -7,6 +7,7 @@ import type { GameWithDraws } from "@/redux/api/gameApi";
 import type { Draw } from "@/types/game";
 import { getGameColor } from "@/utils/getGameColor";
 import Spinner from "@/components/Spinner";
+import { formatDate } from "@/utils/formatDate";
 
 interface GameHeaderProps {
   game: GameWithDraws;
@@ -46,12 +47,7 @@ export default function GameHeader({
     null;
 
   const displayDrawDate = currentDraw ? (
-    new Date(currentDraw.drawDate).toLocaleDateString(undefined, {
-      weekday: "long",
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    })
+    formatDate(currentDraw.drawDate)
   ) : (
     <Spinner size="sm" />
   );
@@ -161,12 +157,7 @@ export default function GameHeader({
                     <CheckCircle2 className="text-yellow-400 w-5 h-5" />
                     <div>
                       <p className="font-semibold text-white">
-                        {new Date(d.drawDate).toLocaleDateString(undefined, {
-                          weekday: "long",
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })}
+                        {formatDate(d.drawDate)}
                       </p>
                       <p className="text-yellow-400 text-sm">
                         Jackpot: $

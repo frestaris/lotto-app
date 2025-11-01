@@ -9,6 +9,7 @@ import { useState, useEffect, useMemo } from "react";
 import * as Icons from "lucide-react";
 import { getGameColor } from "@/utils/getGameColor";
 import type { Draw } from "@/types/game";
+import { formatDate } from "@/utils/formatDate";
 
 export default function GameResultsPage() {
   const { slug } = useParams() as { slug: string };
@@ -50,15 +51,7 @@ export default function GameResultsPage() {
     return <div className="text-gray-400 text-center py-10">Loading...</div>;
 
   const isUpcoming = selectedDraw.status === "UPCOMING";
-  const formattedDate = new Date(selectedDraw.drawDate).toLocaleDateString(
-    undefined,
-    {
-      weekday: "long",
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    }
-  );
+  const formattedDate = formatDate(selectedDraw.drawDate);
 
   const jackpot = selectedDraw.jackpotCents ?? game.currentJackpotCents ?? 0;
 
@@ -193,7 +186,7 @@ export default function GameResultsPage() {
             const next = draws.find((d) => d.id === e.target.value);
             setSelectedDraw(next ?? draws[0]);
           }}
-          className="bg-black border border-white/10 rounded-md px-3 py-2 text-sm text-gray-300"
+          className="bg-black border border-white/10 rounded-md px-3 py-2 text-sm text-gray-300 hover:cursor-pointer"
         >
           {[...draws]
             .filter((d) => d.status === "COMPLETED")
@@ -203,12 +196,7 @@ export default function GameResultsPage() {
             )
             .map((d) => (
               <option key={d.id} value={d.id}>
-                Draw {d.drawNumber} —{" "}
-                {new Date(d.drawDate).toLocaleDateString(undefined, {
-                  weekday: "short",
-                  day: "numeric",
-                  month: "short",
-                })}
+                Draw {d.drawNumber} — {formatDate(d.drawDate)}
               </option>
             ))}
         </select>

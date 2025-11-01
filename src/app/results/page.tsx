@@ -5,6 +5,7 @@ import * as Icons from "lucide-react";
 import { useGetLatestDrawsQuery } from "@/redux/api/gameApi";
 import { getGameColor } from "@/utils/getGameColor";
 import GameCard from "@/components/GameCard";
+import { formatDate } from "@/utils/formatDate";
 
 export default function ResultsPage() {
   const { data: draws = [] } = useGetLatestDrawsQuery();
@@ -39,13 +40,7 @@ export default function ResultsPage() {
         {/* GRID */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-w-6xl w-full z-10">
           {draws.slice(0, 8).map((d) => {
-            const drawDate = new Date(d.drawDate);
-            const formattedDate = drawDate.toLocaleDateString(undefined, {
-              weekday: "short",
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            });
+            const formattedDate = formatDate(d.drawDate);
 
             const isCompleted = d.displayStatus === "COMPLETED";
             const isToday = d.displayStatus === "TODAY";

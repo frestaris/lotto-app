@@ -4,6 +4,7 @@ import * as Icons from "lucide-react";
 import { ChevronDown } from "lucide-react";
 import type { UserTicket } from "@/types/ticket";
 import { getGameColor } from "@/utils/getGameColor";
+import { formatDate } from "@/utils/formatDate";
 
 interface TicketAccordionProps {
   gameName: string;
@@ -24,13 +25,7 @@ export default function TicketAccordion({
 
   // Draw info
   const drawNumber = draw?.drawNumber ?? "?";
-  const drawDate = draw?.drawDate
-    ? new Date(draw.drawDate).toLocaleDateString(undefined, {
-        weekday: "short",
-        day: "numeric",
-        month: "short",
-      })
-    : "Unknown date";
+  const drawDate = draw?.drawDate ? formatDate(draw.drawDate) : "Unknown date";
 
   const mainNumbers = draw?.winningMainNumbers ?? [];
   const specialNumbers = draw?.winningSpecialNumbers ?? [];

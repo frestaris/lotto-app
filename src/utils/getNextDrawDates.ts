@@ -1,78 +1,64 @@
 export function getNextDrawDates(frequency: string | null, count = 6): Date[] {
-  if (!frequency) return []; // ✅ guard against null or undefined
+  if (!frequency) return [];
 
   const now = new Date();
   const draws: Date[] = [];
-  const lower = frequency.toLowerCase();
+  const lower = frequency.toLowerCase().trim();
 
-  // Handle daily draws, e.g. "Daily 9 PM"
-  if (lower.includes("daily")) {
-    const timeMatch = lower.match(/(\d+)\s*(am|pm)/);
-    const hour =
-      timeMatch && timeMatch[2] === "pm"
-        ? parseInt(timeMatch[1]) + 12
-        : parseInt(timeMatch?.[1] ?? "20");
+  // 🕐 Extract time info (like "8 PM" or "9 am")
+  const timeMatch = lower.match(/(\d+)\s*(am|pm)/);
+  const hour = timeMatch
+    ? timeMatch[2] === "pm"
+      ? parseInt(timeMatch[1]) + 12
+      : parseInt(timeMatch[1])
+    : 20; // fallback 8 PM
 
+  // 🗓️ DAILY DRAW HANDLING
+  if (lower.startsWith("daily")) {
     const next = new Date(now);
     next.setHours(hour, 0, 0, 0);
     if (next <= now) next.setDate(next.getDate() + 1);
 
     for (let i = 0; i < count; i++) {
       draws.push(new Date(next));
-      next.setDate(next.getDate() + 1); // next day
+      next.setDate(next.getDate() + 1);
     }
 
     return draws;
   }
 
-  // Handle weekly draws (e.g. "Thursday 8 PM")
-  const [dayOfWeek, timeStr] = frequency.split(" ");
-  if (!dayOfWeek || !timeStr) return []; // guard against malformed strings
-
-  // Extract hour and AM/PM
-  const timeMatch = timeStr.match(/(\d+)\s*(am|pm)/i);
-  const hour =
-    timeMatch && timeMatch[2].toLowerCase() === "pm"
-      ? parseInt(timeMatch[1]) + 12
-      : parseInt(timeMatch?.[1] ?? "20");
-
-  // Map day names
+  // 🗓️ WEEKLY DRAW HANDLING (e.g. "Thursday 8 PM")
   const days = [
-    "Sunday",
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
+    "sunday",
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
   ];
-  const targetDayIndex = days.findIndex((d) =>
-    d.toLowerCase().includes(dayOfWeek.toLowerCase())
-  );
-  if (targetDayIndex === -1) return [];
 
-  let next = new Date(now);
+  const dayMatch = days.find((d) => lower.includes(d));
+  if (!dayMatch) return [];
+
+  const targetDayIndex = days.indexOf(dayMatch);
+  const currentDayIndex = now.getDay();
+
+  const next = new Date(now);
   next.setHours(hour, 0, 0, 0);
 
-  // ✅ Include today’s draw if it hasn’t passed yet
-  const currentDay = now.getDay();
-
-  if (currentDay === targetDayIndex) {
-    if (next <= now) {
-      // today’s draw time already passed → next week
-      next.setDate(next.getDate() + 7);
-    }
-  } else {
-    // find the next occurrence of the target day
-    const diff = (targetDayIndex + 7 - currentDay) % 7 || 7; // ensures non-zero positive diff
-    next.setDate(now.getDate() + diff);
+  // if draw is today but already passed, skip a week
+  if (currentDayIndex === targetDayIndex && next <= now) {
+    next.setDate(next.getDate() + 7);
+  } else if (currentDayIndex !== targetDayIndex) {
+    const diff = (targetDayIndex + 7 - currentDayIndex) % 7;
+    next.setDate(now.getDate() + (diff || 7));
     next.setHours(hour, 0, 0, 0);
   }
 
   // generate next N weekly draws
   for (let i = 0; i < count; i++) {
     draws.push(new Date(next));
-    next = new Date(next);
     next.setDate(next.getDate() + 7);
   }
 

@@ -1,6 +1,7 @@
 "use client";
 import { ShoppingCart } from "lucide-react";
 import type { Draw, Game } from "@/types/game";
+import { formatDate } from "@/utils/formatDate";
 
 interface PickerFooterProps {
   selectedNumbers: (number | null)[][];
@@ -29,18 +30,14 @@ export default function PickerFooter({
 
   return (
     <div className="sticky bottom-0 left-0 w-full bg-black/80 backdrop-blur-md border-t border-white/10 z-50">
-      <div className="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-center sm:items-center px-4 sm:px-6 py-4 gap-3 sm:gap-6">
+      <div className="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-center px-4 sm:px-6 py-4 gap-3 sm:gap-6">
         {/* Left section — info */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:gap-6 w-full sm:w-auto text-center sm:text-left">
           {selectedDraw && (
             <div className="text-sm text-gray-400 sm:mb-0 mb-2">
               For draw on{" "}
               <span className="text-yellow-400 font-semibold">
-                {new Date(selectedDraw.drawDate).toLocaleDateString(undefined, {
-                  weekday: "long",
-                  day: "numeric",
-                  month: "short",
-                })}
+                {formatDate(selectedDraw.drawDate)}
               </span>
             </div>
           )}
