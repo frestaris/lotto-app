@@ -4,21 +4,10 @@ import Link from "next/link";
 import * as Icons from "lucide-react";
 import { useGetLatestDrawsQuery } from "@/redux/api/gameApi";
 import { getGameColor } from "@/utils/getGameColor";
-import Spinner from "@/components/Spinner";
 import GameCard from "@/components/GameCard";
 
 export default function ResultsPage() {
-  const { data: draws = [], isLoading } = useGetLatestDrawsQuery();
-
-  if (isLoading)
-    return (
-      <Spinner
-        message="Loading latest results…"
-        variant="accent"
-        size="lg"
-        fullScreen
-      />
-    );
+  const { data: draws = [] } = useGetLatestDrawsQuery();
 
   if (!draws.length)
     return (

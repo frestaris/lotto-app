@@ -1,3 +1,4 @@
+import RouteLoader from "@/components/RouteLoader";
 import "./globals.css";
 import { Providers } from "./providers";
 import Navbar from "@/components/Navbar";
@@ -17,6 +18,7 @@ export default function RootLayout({
       <body className="bg-[#0a0a0a] text-white">
         <Providers>
           <Navbar />
+          <RouteLoader />
           {children}
         </Providers>
       </body>

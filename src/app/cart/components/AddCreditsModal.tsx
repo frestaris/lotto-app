@@ -41,10 +41,8 @@ export default function AddCreditsModal({ onClose }: AddCreditsModalProps) {
         addCredits: amount,
       }).unwrap();
 
-      // ✅ Update Redux state instantly
       dispatch(updateCreditsSuccess(Math.round(amount * 100)));
 
-      // ✅ Refresh NextAuth session from DB
       await update({ trigger: "update" });
 
       setStatus("success");

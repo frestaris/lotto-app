@@ -10,7 +10,7 @@ import { useAppDispatch, useAppSelector } from "@/redux/store";
 import { updateCreditsSuccess } from "@/redux/slices/accountSlice";
 
 interface AddCreditsCardProps {
-  credits?: number; // optional so it still works even if prop isn’t passed
+  credits?: number;
 }
 
 export default function AddCreditsCard({ credits }: AddCreditsCardProps) {
@@ -18,7 +18,6 @@ export default function AddCreditsCard({ credits }: AddCreditsCardProps) {
   const dispatch = useAppDispatch();
   const account = useAppSelector((s) => s.account.account);
 
-  // If credits prop exists (from SettingsPage), use it; otherwise fallback to Redux
   const currentCredits = credits ?? account?.creditCents ?? 0;
 
   const [open, setOpen] = useState(false);
@@ -48,10 +47,8 @@ export default function AddCreditsCard({ credits }: AddCreditsCardProps) {
         addCredits: amount,
       }).unwrap();
 
-      // ✅ Update Redux balance instantly
       dispatch(updateCreditsSuccess(Math.round(amount * 100)));
 
-      // ✅ Refresh NextAuth session from DB (calls trigger="update" on jwt callback)
       await update({ trigger: "update" });
 
       setStatus("success");
@@ -64,7 +61,6 @@ export default function AddCreditsCard({ credits }: AddCreditsCardProps) {
       setStatus("error");
       setMessage("Failed to add credits. Please try again.");
     } finally {
-      // Reset feedback after 3s
       setTimeout(() => setStatus("idle"), 3000);
     }
   };

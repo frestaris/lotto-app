@@ -60,7 +60,6 @@ export default function CartPage() {
       dispatch(clearCart());
       dispatch(resetTicketState());
 
-      console.log("🔁 Refreshing session...");
       const newSession = await update({ trigger: "update" });
       if (newSession?.user) {
         dispatch(setAccount(newSession.user));

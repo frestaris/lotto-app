@@ -3,20 +3,32 @@
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAppSelector } from "@/redux/store";
 import { User, ShoppingCart, Settings, Ticket, LogOut } from "lucide-react";
 
 export default function Navbar() {
   const { data: session } = useSession();
-  const [open, setOpen] = useState(false);
   const { tickets } = useAppSelector((state) => state.cart);
+  const [open, setOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Only render cart badge after client hydration
+  useEffect(() => setIsMounted(true), []);
+
   useEffect(() => {
-    setIsMounted(true);
-  }, []);
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
+        setOpen(false);
+      }
+    }
+
+    if (open) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open]);
 
   return (
     <nav className="sticky top-0 z-50 bg-[#0a0a0a]/90 backdrop-blur-md border-b border-white/10">
@@ -34,10 +46,9 @@ export default function Navbar() {
         </Link>
 
         <div className="flex items-center gap-5">
-          {/* 🛒 Cart Icon */}
+          {/* 🛒 Cart */}
           <Link href="/cart" className="relative group">
             <ShoppingCart className="text-2xl text-white hover:text-yellow-400 transition" />
-            {/* ✅ render badge only after mount to prevent SSR mismatch */}
             {isMounted && tickets.length > 0 && (
               <span className="absolute -top-2 -right-2 bg-yellow-400 text-black text-xs font-bold px-1.5 rounded-full group-hover:scale-105 transition">
                 {tickets.length}
@@ -45,7 +56,7 @@ export default function Navbar() {
             )}
           </Link>
 
-          {/* 👤 Auth buttons */}
+          {/* 👤 Auth */}
           {!session ? (
             <Link
               href="/login"
@@ -54,7 +65,7 @@ export default function Navbar() {
               Login
             </Link>
           ) : (
-            <div className="relative">
+            <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setOpen((p) => !p)}
                 className="flex items-center gap-2 hover:cursor-pointer"
@@ -75,22 +86,23 @@ export default function Navbar() {
               </button>
 
               {open && (
-                <div className="absolute right-0 mt-3 w-48 bg-[#1e1e1e] rounded-xl border border-white/10 shadow-lg overflow-hidden">
+                <div className="absolute right-0 mt-3 w-48 bg-[#1e1e1e] rounded-xl border border-white/10 shadow-lg overflow-hidden animate-fadeIn">
                   <Link
                     href="/tickets"
-                    className="flex items-center gap-2 px-4 py-2 hover:bg-white/10 text-gray-200"
                     onClick={() => setOpen(false)}
+                    className="flex items-center gap-2 px-4 py-2 hover:bg-white/10 text-gray-200"
                   >
                     <Ticket className="w-4 h-4 text-yellow-400" /> My Tickets
                   </Link>
 
                   <Link
                     href="/settings"
-                    className="flex items-center gap-2 px-4 py-2 hover:bg-white/10 text-gray-200"
                     onClick={() => setOpen(false)}
+                    className="flex items-center gap-2 px-4 py-2 hover:bg-white/10 text-gray-200"
                   >
                     <Settings className="w-4 h-4 text-yellow-400" /> Settings
                   </Link>
+
                   <button
                     onClick={() => {
                       signOut();
