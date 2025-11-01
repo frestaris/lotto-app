@@ -20,7 +20,9 @@ export default function MyTicketsPage() {
 
   // Group tickets by month
   const grouped = useMemo(() => groupTicketsByMonth(tickets), [tickets]);
-  const months = Object.keys(grouped);
+  const months = Object.keys(grouped).sort(
+    (a, b) => new Date(a).getTime() - new Date(b).getTime()
+  );
   const defaultMonth = months.length ? months[0] : "";
   const activeMonth = selectedMonth || defaultMonth;
   const filteredTickets = grouped[activeMonth] || [];

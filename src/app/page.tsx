@@ -7,10 +7,21 @@ import Link from "next/link";
 import type { Game } from "@/types/game";
 import GameCard from "@/components/GameCard";
 import Skeleton from "@/components/Skeleton";
+import { useState } from "react";
+import Modal from "@/components/Modal";
 
 export default function HomePage() {
   const { data: games = [], isLoading, error } = useGetAllGamesQuery();
   const prefetchGame = usePrefetch("getGameFull");
+  const [selectedGame, setSelectedGame] = useState<Game | null>(null);
+
+  const handleInfoClick = (game: Game, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSelectedGame(game);
+  };
+
+  const closeModal = () => setSelectedGame(null);
 
   if (error)
     return (
@@ -63,7 +74,7 @@ export default function HomePage() {
                   key={i}
                   className="p-6 rounded-xl bg-white/5 border border-white/10 space-y-3 animate-pulse"
                 >
-                  <Skeleton height="h-12" width="w-12" className="mx-auto" />
+                  <Skeleton height="h-12" width="w-12 mx-auto" />
                   <Skeleton height="h-5" width="w-3/4 mx-auto" />
                   <Skeleton height="h-6" width="w-1/2 mx-auto" />
                   <Skeleton height="h-4" width="w-2/3 mx-auto" />
@@ -80,11 +91,20 @@ export default function HomePage() {
                   <Link
                     key={game.id}
                     href={`/game/${game.slug}`}
-                    onMouseEnter={() => {
-                      prefetchGame(game.slug);
-                    }}
+                    onMouseEnter={() => prefetchGame(game.slug)}
                   >
-                    <GameCard>
+                    <GameCard
+                      description={
+                        <button
+                          onClick={(e) => handleInfoClick(game, e)}
+                          className="p-1.5 rounded-full bg-white/10 hover:bg-yellow-400 hover:text-black hover:cursor-pointer transition"
+                          title="Game info"
+                        >
+                          <Icons.Info className="w-4 h-4" />
+                        </button>
+                      }
+                    >
+                      {/* Icon */}
                       <div className="transition-transform duration-300 group-hover:scale-110">
                         <Icon
                           className={`w-12 h-12 ${getGameColor(
@@ -93,10 +113,12 @@ export default function HomePage() {
                         />
                       </div>
 
+                      {/* Game name */}
                       <h2 className="text-lg font-semibold group-hover:text-yellow-400 transition-colors duration-200">
                         {game.name}
                       </h2>
 
+                      {/* ✅ Jackpot restored */}
                       {game.jackpotCents && (
                         <p className="text-xl font-bold text-yellow-400 transition-opacity duration-300 group-hover:opacity-90">
                           $
@@ -109,6 +131,8 @@ export default function HomePage() {
                       <p className="text-sm text-gray-400">
                         {game.drawFrequency}
                       </p>
+
+                      {/* ✅ Divider + ticket price restored */}
                       <div className="h-[3px] w-1/2 bg-yellow-400/30 mt-2 rounded-full"></div>
                       <p className="text-xs text-gray-500">
                         ${(game.priceCents / 100).toFixed(2)} per ticket
@@ -118,6 +142,33 @@ export default function HomePage() {
                 );
               })}
         </div>
+        {/* INFO MODAL */}
+        {selectedGame && (
+          <Modal isOpen={true} onClose={closeModal} title={selectedGame.name}>
+            <div className="space-y-5 text-gray-300 text-center">
+              {/* Icon + Name */}
+              <div className="flex flex-col items-center justify-center">
+                {(() => {
+                  const Icon =
+                    (Icons[
+                      selectedGame.iconName as keyof typeof Icons
+                    ] as React.ElementType) || Icons.Ticket;
+                  return (
+                    <Icon
+                      className={`w-12 h-12 mb-3 ${getGameColor(
+                        selectedGame.slug
+                      )} drop-shadow-[0_0_8px_rgba(255,215,0,0.5)]`}
+                    />
+                  );
+                })()}
+              </div>
+              {/* Description */}
+              <p className="leading-relaxed text-gray-300">
+                {selectedGame.description}
+              </p>
+            </div>
+          </Modal>
+        )}
       </section>
     </div>
   );

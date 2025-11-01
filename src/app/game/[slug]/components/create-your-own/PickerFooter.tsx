@@ -34,7 +34,7 @@ export default function PickerFooter({
         <div className="flex flex-col sm:flex-row sm:items-center sm:gap-6 w-full sm:w-auto text-center sm:text-left">
           {selectedDraw && (
             <div className="text-sm text-gray-400 sm:mb-0 mb-2">
-              🎟️ For draw on{" "}
+              For draw on{" "}
               <span className="text-yellow-400 font-semibold">
                 {new Date(selectedDraw.drawDate).toLocaleDateString(undefined, {
                   weekday: "long",
