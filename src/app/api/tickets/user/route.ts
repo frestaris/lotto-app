@@ -12,21 +12,21 @@ const prisma = new PrismaClient();
 export async function GET() {
   const session = await getServerSession(authOptions);
 
-  if (!session?.user?.email)
+  if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-    });
-
-    if (!user)
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-
     const tickets = await prisma.ticket.findMany({
-      where: { userId: user.id },
+      where: { userId: session.user.id },
       include: {
-        game: { select: { name: true, iconName: true, slug: true } },
+        game: {
+          select: {
+            name: true,
+            slug: true,
+            iconName: true,
+          },
+        },
         draw: {
           select: {
             drawNumber: true,
@@ -44,13 +44,13 @@ export async function GET() {
     const enhanced = tickets.map((t) => {
       let result: "WON" | "LOST" | "PENDING" = "PENDING";
 
-      if (t.status === "WON") result = "WON";
-      else if (t.status === "LOST") result = "LOST";
-      else if (t.draw?.status === "UPCOMING") result = "PENDING";
+      if (t.draw?.status === "COMPLETED") {
+        if (t.payoutCents && t.payoutCents > 0) result = "WON";
+        else result = "LOST";
+      }
 
-      // ✅ strongly type divisionResults as array
-      const divisionResults = t.draw?.divisionResults
-        ? (t.draw.divisionResults as {
+      const divisionResults = Array.isArray(t.draw?.divisionResults)
+        ? (t.draw!.divisionResults as {
             type: string;
             poolCents: number;
             winnersCount: number;

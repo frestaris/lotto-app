@@ -61,7 +61,7 @@ export default function PickerFooter({
         {/* Right section — button */}
         <button
           onClick={onAdd}
-          className="flex items-center justify-center gap-2 bg-green-500 text-black font-semibold px-6 py-3 rounded-lg hover:bg-green-400 transition w-full sm:w-auto mt-3 sm:mt-0"
+          className="flex items-center justify-center gap-2 bg-green-500 text-black font-semibold px-6 py-3 rounded-lg hover:bg-green-400 transition w-full sm:w-auto mt-3 sm:mt-0 hover:cursor-pointer"
         >
           <ShoppingCart className="w-5 h-5" />
           Add to Cart

@@ -26,7 +26,11 @@ export default function CartHeader({
             <p className="text-gray-300 text-sm sm:text-base">
               Available Credits:{" "}
               <span className="text-yellow-400 font-semibold">
-                ${(credits / 100).toFixed(2)}
+                $
+                {(credits / 100).toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
               </span>
             </p>
           </div>

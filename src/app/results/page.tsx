@@ -6,16 +6,45 @@ import { useGetLatestDrawsQuery } from "@/redux/api/gameApi";
 import { getGameColor } from "@/utils/getGameColor";
 import GameCard from "@/components/GameCard";
 import { formatDate } from "@/utils/formatDate";
+import Spinner from "@/components/Spinner";
 
 export default function ResultsPage() {
-  const { data: draws = [] } = useGetLatestDrawsQuery();
+  const {
+    data: draws = [],
+    isLoading,
+    isFetching,
+    isError,
+  } = useGetLatestDrawsQuery();
 
-  if (!draws.length)
+  const loading = isLoading || isFetching;
+
+  if (loading) {
+    return (
+      <div className="h-[calc(100vh-72px)] flex flex-col items-center justify-center bg-[#0a0a0a] text-gray-400">
+        <Spinner
+          variant="accent"
+          size="lg"
+          message="Fetching latest draws..."
+        />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="h-[calc(100vh-72px)] flex items-center justify-center text-red-400 bg-[#0a0a0a]">
+        Failed to load draws. Please try again later.
+      </div>
+    );
+  }
+
+  if (!draws.length) {
     return (
       <div className="h-[calc(100vh-72px)] flex items-center justify-center text-gray-400 bg-[#0a0a0a]">
         No draws available yet.
       </div>
     );
+  }
 
   return (
     <div className="relative text-white bg-gradient-to-b from-[#0a0a0a] via-[#0f0f0f] to-[#1a1a1a] overflow-hidden">
@@ -41,16 +70,15 @@ export default function ResultsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-w-6xl w-full z-10">
           {draws.slice(0, 8).map((d) => {
             const formattedDate = formatDate(d.drawDate);
-
-            const isCompleted = d.displayStatus === "COMPLETED";
-            const isToday = d.displayStatus === "TODAY";
-            const isAwaiting = d.displayStatus === "AWAITING_RESULTS";
-
             const slug = d.gameName.toLowerCase().replace(/\s+/g, "-");
             const Icon =
               (Icons[d.iconName as keyof typeof Icons] as React.ElementType) ||
               Icons.Ticket;
             const iconColor = getGameColor(slug);
+
+            const isCompleted = d.displayStatus === "COMPLETED";
+            const isToday = d.displayStatus === "TODAY";
+            const isAwaiting = d.displayStatus === "AWAITING_RESULTS";
 
             return (
               <Link
@@ -58,8 +86,7 @@ export default function ResultsPage() {
                 href={`/results/${slug}`}
               >
                 <GameCard>
-                  {/* Icon with glow */}
-                  <div className="relative">
+                  <div className="relative group">
                     <div className="absolute inset-0 blur-xl rounded-full bg-yellow-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     <Icon
                       className={`relative w-12 h-12 ${iconColor} drop-shadow-[0_0_8px_rgba(255,215,0,0.5)] transition-transform duration-300 group-hover:scale-110`}
@@ -70,7 +97,6 @@ export default function ResultsPage() {
                     {d.gameName}
                   </h2>
 
-                  {/* Status */}
                   <p className="text-sm text-gray-400">
                     Draw {d.drawNumber} —{" "}
                     {isCompleted ? (
@@ -91,10 +117,9 @@ export default function ResultsPage() {
                       </span>
                     )}
                   </p>
-                  {/* Border */}
-                  <div className="h-[3px] w-1/2 bg-yellow-400/30 mt-3 rounded-full"></div>
 
-                  {/* Winning numbers */}
+                  <div className="h-[3px] w-1/2 bg-yellow-400/30 mt-3 rounded-full" />
+
                   {isCompleted && d.winningMainNumbers?.length > 0 && (
                     <div className="mt-4 flex flex-wrap justify-start gap-2">
                       {d.winningMainNumbers.map((num: number, i: number) => (

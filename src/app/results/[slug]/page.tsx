@@ -1,30 +1,45 @@
 "use client";
 
 import { useParams } from "next/navigation";
+import { useState, useEffect, useMemo } from "react";
+import * as Icons from "lucide-react";
 import {
   useGetTicketsByDrawIdQuery,
   useGetGameFullQuery,
 } from "@/redux/api/gameApi";
-import { useState, useEffect, useMemo } from "react";
-import * as Icons from "lucide-react";
 import { getGameColor } from "@/utils/getGameColor";
 import type { Draw } from "@/types/game";
 import { formatDate } from "@/utils/formatDate";
+import Spinner from "@/components/Spinner";
 
 export default function GameResultsPage() {
   const { slug } = useParams() as { slug: string };
-  const { data: game } = useGetGameFullQuery(slug);
+
+  // 🎯 Fetch game and draw data
+  const {
+    data: game,
+    isLoading: isGameLoading,
+    isFetching: isGameFetching,
+    isError: isGameError,
+  } = useGetGameFullQuery(slug);
+
   const draws = useMemo(() => game?.draws ?? [], [game?.draws]);
 
   const [selectedDraw, setSelectedDraw] = useState<Draw | null>(null);
   const drawId = selectedDraw?.id ?? "";
   const skipTickets = !selectedDraw?.id;
 
-  const { data: ticketsData } = useGetTicketsByDrawIdQuery(drawId, {
-    skip: skipTickets,
-  });
-  const divisionResults = ticketsData?.divisionResults ?? [];
+  const {
+    data: ticketsData,
+    isLoading: isTicketsLoading,
+    isFetching: isTicketsFetching,
+  } = useGetTicketsByDrawIdQuery(drawId, { skip: skipTickets });
 
+  const divisionResults = ticketsData?.divisionResults ?? [];
+  const loading =
+    isGameLoading || isGameFetching || isTicketsLoading || isTicketsFetching;
+
+  // 🧩 Auto-select most recent completed or next upcoming draw
   useEffect(() => {
     if (draws.length) {
       const sorted = [...draws].sort(
@@ -46,16 +61,42 @@ export default function GameResultsPage() {
     }
   }, [draws]);
 
-  // ⏳ Handle loading state
-  if (!game || !selectedDraw)
-    return <div className="text-gray-400 text-center py-10">Loading...</div>;
+  // ⏳ Loading state
+  if (loading) {
+    return (
+      <div className="h-[calc(100vh-72px)] flex flex-col items-center justify-center bg-[#0a0a0a] text-gray-400">
+        <Spinner
+          variant="accent"
+          size="lg"
+          message="Fetching game results..."
+        />
+      </div>
+    );
+  }
 
+  // ❌ Error state
+  if (isGameError) {
+    return (
+      <div className="h-[calc(100vh-72px)] flex items-center justify-center text-red-400 bg-[#0a0a0a]">
+        Failed to load game results. Please try again later.
+      </div>
+    );
+  }
+
+  // 🕳️ No data state
+  if (!game || !selectedDraw) {
+    return (
+      <div className="h-[calc(100vh-72px)] flex items-center justify-center text-gray-400 bg-[#0a0a0a]">
+        No draw data available.
+      </div>
+    );
+  }
+
+  // 🎨 Normal rendering
   const isUpcoming = selectedDraw.status === "UPCOMING";
   const formattedDate = formatDate(selectedDraw.drawDate);
-
   const jackpot = selectedDraw.jackpotCents ?? game.currentJackpotCents ?? 0;
 
-  // ✅ Icon setup with color theme
   const Icon =
     (Icons[game.iconName as keyof typeof Icons] as React.ElementType) ||
     Icons.Ticket;

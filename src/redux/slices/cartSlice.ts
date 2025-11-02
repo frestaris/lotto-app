@@ -7,6 +7,8 @@ export interface TicketItem {
   id: string;
   gameId: string;
   gameName: string;
+  slug: string;
+  iconName: string;
   drawId?: string | null;
   drawDate: string | null;
   numbers: number[];

@@ -146,6 +146,8 @@ export default function ManualPicker({
           id: uuidv4(),
           gameId: game.id,
           gameName: game.name,
+          slug: game.slug ?? "",
+          iconName: game.iconName ?? "",
           drawId: selectedDraw?.id || null,
           drawDate:
             selectedDraw?.drawDate ||

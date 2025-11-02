@@ -4,7 +4,7 @@
  */
 export function getGameColor(slug?: string): string {
   const colorMap: Record<string, string> = {
-    "starpick": "text-yellow-400",
+    starpick: "text-yellow-400",
     "luckydraw-7": "text-green-400",
     "dreamline-daily": "text-purple-400",
     "weekend-millions": "text-orange-400",

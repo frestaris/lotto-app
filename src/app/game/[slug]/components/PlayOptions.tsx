@@ -59,6 +59,8 @@ export default function PlayOptions({ game, selectedDraw }: PlayOptionsProps) {
           id: uuidv4(),
           gameId: game.id,
           gameName: game.name,
+          slug: game.slug ?? "",
+          iconName: game.iconName ?? "",
           drawDate: selectedDraw?.drawDate || nextAvailableDraw,
           numbers: main,
           specialNumbers: special,

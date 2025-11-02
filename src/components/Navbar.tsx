@@ -35,7 +35,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-3">
         <Link href="/" className="flex items-center gap-2">
           <Image
-            src="/images/logo.jpeg"
+            src="/images/logo.png"
             alt="Lotto App"
             width={40}
             height={40}
