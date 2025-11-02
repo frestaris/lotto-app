@@ -12,11 +12,18 @@ const prisma = new PrismaClient();
 export async function GET() {
   const session = await getServerSession(authOptions);
 
-  if (!session?.user?.id) {
+  if (!session?.user?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+    });
+
+    if (!user)
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+
     const tickets = await prisma.ticket.findMany({
       where: { userId: session.user.id },
       include: {
