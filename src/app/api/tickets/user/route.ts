@@ -7,9 +7,9 @@ const prisma = new PrismaClient();
 
 /**
  * GET /api/tickets/user
- * Returns all tickets for the logged-in user with game + draw info
+ * Returns all tickets for that month (no pagination)
  */
-export async function GET() {
+export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.email) {
@@ -17,6 +17,26 @@ export async function GET() {
   }
 
   try {
+    const { searchParams } = new URL(req.url);
+    const month = searchParams.get("month");
+
+    // Build date filter if month provided
+    let dateFilter = {};
+    if (month) {
+      const start = new Date(`${month}-01T00:00:00Z`);
+      const end = new Date(start);
+      end.setMonth(end.getMonth() + 1);
+
+      dateFilter = {
+        draw: {
+          drawDate: {
+            gte: start,
+            lt: end,
+          },
+        },
+      };
+    }
+
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
     });
@@ -24,15 +44,15 @@ export async function GET() {
     if (!user)
       return NextResponse.json({ error: "User not found" }, { status: 404 });
 
+    // Fetch all tickets for that month
     const tickets = await prisma.ticket.findMany({
-      where: { userId: session.user.id },
+      where: {
+        userId: session.user.id,
+        ...dateFilter,
+      },
       include: {
         game: {
-          select: {
-            name: true,
-            slug: true,
-            iconName: true,
-          },
+          select: { name: true, slug: true, iconName: true },
         },
         draw: {
           select: {
@@ -45,9 +65,12 @@ export async function GET() {
           },
         },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: {
+        draw: { drawDate: "desc" },
+      },
     });
 
+    // Enhance tickets with result info
     const enhanced = tickets.map((t) => {
       let result: "WON" | "LOST" | "PENDING" = "PENDING";
 
@@ -77,7 +100,7 @@ export async function GET() {
       };
     });
 
-    return NextResponse.json(enhanced, { status: 200 });
+    return NextResponse.json({ tickets: enhanced }, { status: 200 });
   } catch (error) {
     console.error("❌ Error fetching user tickets:", error);
     return NextResponse.json(

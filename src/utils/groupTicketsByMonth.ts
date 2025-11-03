@@ -5,8 +5,10 @@ export function groupTicketsByMonth(
 ): Record<string, UserTicket[]> {
   const groups: Record<string, UserTicket[]> = {};
   for (const t of tickets) {
-    const date = new Date(t.createdAt);
-    const key = date.toLocaleString("default", {
+    const drawDate = t.draw?.drawDate
+      ? new Date(t.draw.drawDate)
+      : new Date(t.createdAt);
+    const key = drawDate.toLocaleString("default", {
       month: "short",
       year: "numeric",
     });
@@ -14,4 +16,10 @@ export function groupTicketsByMonth(
     groups[key].push(t);
   }
   return groups;
+}
+
+export function convertToYearMonth(label: string) {
+  const [mon, year] = label.split(" ");
+  const monthIndex = new Date(`${mon} 1, ${year}`).getMonth() + 1;
+  return `${year}-${monthIndex.toString().padStart(2, "0")}`;
 }

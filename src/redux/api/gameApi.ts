@@ -38,9 +38,16 @@ export const gameApi = baseApi.injectEndpoints({
       providesTags: ["Draw"],
     }),
 
-    // 👤 User tickets (basic)
-    getUserTickets: builder.query<UserTicket[], string>({
-      query: () => ({ url: `/tickets/user` }),
+    // 👤 User tickets
+    getUserTickets: builder.query<
+      { tickets: UserTicket[] },
+      { month?: string }
+    >({
+      query: ({ month } = {}) => {
+        const params = new URLSearchParams();
+        if (month) params.append("month", month);
+        return { url: `/tickets/user?${params.toString()}` };
+      },
       providesTags: ["Ticket"],
     }),
 
