@@ -1,35 +1,17 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import jwt, { JwtPayload } from "jsonwebtoken";
 
+import { getServerSession } from "next-auth";
+import { authOptions } from "../auth/[...nextauth]/route";
 const prisma = new PrismaClient();
 
-interface DecodedToken extends JwtPayload {
-  userId?: string;
-}
-
 export async function POST(req: Request) {
-  const authHeader = req.headers.get("authorization");
-  if (!authHeader?.startsWith("Bearer ")) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const token = authHeader.split(" ")[1];
-  let userId: string | undefined;
-
-  try {
-    const decoded = jwt.verify(
-      token,
-      process.env.NEXTAUTH_SECRET!
-    ) as DecodedToken;
-    userId = decoded.userId;
-  } catch {
-    return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-  }
-
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const userId = session.user.id;
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -68,6 +50,15 @@ export async function POST(req: Request) {
       );
     }
 
+    const game = await prisma.game.findUnique({
+      where: { id: gameId },
+      select: { id: true, name: true, priceCents: true },
+    });
+
+    if (!game) {
+      return NextResponse.json({ error: "Game not found" }, { status: 404 });
+    }
+
     const result = await prisma.$transaction(async (tx) => {
       const updatedUser = await tx.user.update({
         where: { id: user.id },
@@ -75,9 +66,11 @@ export async function POST(req: Request) {
           creditCents: { decrement: priceCents },
           transactions: {
             create: {
-              type: "DEBIT",
+              type: "TICKET_PURCHASE",
+              gameId: game.id,
+              drawId: upcomingDraw.id,
               amountCents: priceCents,
-              description: `Ticket purchase for game ${gameId}`,
+              description: `Ticket purchase for ${game.name}`,
               reference: upcomingDraw.id,
             },
           },
@@ -87,7 +80,7 @@ export async function POST(req: Request) {
       const ticket = await tx.ticket.create({
         data: {
           userId: user.id,
-          gameId,
+          gameId: game.id,
           drawId: upcomingDraw.id,
           numbers,
           specialNumbers,

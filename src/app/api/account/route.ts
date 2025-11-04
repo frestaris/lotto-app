@@ -98,9 +98,10 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ message: "Password updated", user: updated });
     }
 
-    // 💰 Add Credits
+    // 💰 Add Credits (Manual top-up)
     if (action === "addCredits") {
       const addCents = Math.max(0, Math.floor(addCredits * 100));
+
       if (!addCents) {
         return NextResponse.json(
           { error: "Invalid credit amount" },
@@ -116,13 +117,17 @@ export async function PATCH(req: Request) {
             create: {
               type: "CREDIT",
               amountCents: addCents,
-              description: "Manual top-up via Settings",
+              description: "Manual top-up",
+              reference: `CREDIT-${Date.now()}`,
             },
           },
         },
       });
 
-      return NextResponse.json({ message: "Credits added", user: updated });
+      return NextResponse.json({
+        message: "Credits added successfully",
+        user: updated,
+      });
     }
 
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });

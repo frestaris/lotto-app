@@ -1,3 +1,4 @@
+import type { TransactionsResponse } from "@/types/transaction";
 import { baseApi } from "../api/baseApi";
 
 export const accountApi = baseApi.injectEndpoints({
@@ -10,6 +11,7 @@ export const accountApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Account"],
     }),
+
     deleteAccount: builder.mutation({
       query: () => ({
         url: "/account",
@@ -17,8 +19,19 @@ export const accountApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Account"],
     }),
+
+    // ✅ Updated to accept optional month
+    getUserTransactions: builder.query<TransactionsResponse, string | void>({
+      query: (month) => ({
+        url: month ? `/transactions/user?month=${month}` : "/transactions/user",
+      }),
+      providesTags: ["Transaction"],
+    }),
   }),
 });
 
-export const { useUpdateAccountMutation, useDeleteAccountMutation } =
-  accountApi;
+export const {
+  useUpdateAccountMutation,
+  useDeleteAccountMutation,
+  useGetUserTransactionsQuery,
+} = accountApi;

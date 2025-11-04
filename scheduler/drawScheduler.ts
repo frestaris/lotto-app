@@ -129,9 +129,11 @@ async function runDueDrawsForGame(game: SchedulerGame) {
         await prisma.walletTransaction.create({
           data: {
             userId: t.userId,
-            type: "CREDIT",
+            type: "PAYOUT",
             amountCents: payoutPerWinner,
             reference: draw.id,
+            gameId: game.id,
+            drawId: draw.id,
             description: `Prize payout (${rule.type}) for draw #${draw.drawNumber} (${game.name})`,
           },
         });

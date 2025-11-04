@@ -60,13 +60,19 @@ model VerificationToken {
 model WalletTransaction {
   id          String   @id @default(cuid())
   userId      String
+  gameId      String? 
+  drawId      String? 
   type        String
   amountCents Int
   reference   String?
   description String?
   createdAt   DateTime @default(now())
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game        Game?    @relation(fields: [gameId], references: [id]) 
+  draw        Draw?    @relation(fields: [drawId], references: [id])
+
 }
+
 
 model Game {
   id                  String   @id @default(cuid())
@@ -92,6 +98,7 @@ model Game {
   iconName            String?
   draws               Draw[]
   tickets             Ticket[]
+  walletTransactions  WalletTransaction[] 
 }
 
 model Draw {
@@ -111,7 +118,8 @@ model Draw {
   totalPayoutCents      Int        @default(0)
   game                  Game       @relation(fields: [gameId], references: [id])
   tickets               Ticket[]
-
+  walletTransactions    WalletTransaction[]
+  
   @@index([gameId, status])
   @@index([gameId, drawDate])
 }

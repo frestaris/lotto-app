@@ -1,6 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import api from "@/lib/axios";
+import { accountApi } from "../api/accountApi";
 
 export interface TicketData {
   gameId: string;
@@ -44,7 +45,7 @@ export const submitTickets = createAsyncThunk<
   TicketResponse,
   TicketData[],
   { state: RootState; rejectValue: string }
->("tickets/submitTickets", async (tickets, { rejectWithValue }) => {
+>("tickets/submitTickets", async (tickets, { dispatch, rejectWithValue }) => {
   try {
     let lastResponse: TicketResponse | null = null;
 
@@ -54,6 +55,8 @@ export const submitTickets = createAsyncThunk<
     }
 
     if (!lastResponse) throw new Error("No response from server");
+
+    dispatch(accountApi.util.invalidateTags(["Transaction"]));
 
     return lastResponse;
   } catch (error) {

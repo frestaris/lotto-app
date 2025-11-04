@@ -70,7 +70,11 @@ export default function AddCreditsCard({ credits }: AddCreditsCardProps) {
       <GameCard onClick={() => setOpen(true)}>
         <Coins className="w-6 h-6 text-yellow-400 mb-2" />
         <span className="text-3xl font-extrabold text-yellow-400 block mb-2">
-          ${(currentCredits / 100).toFixed(2)}
+          $
+          {(currentCredits / 100).toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}
         </span>
         <h3 className="text-sm text-gray-400">Available Credits</h3>
         <span className="text-yellow-400 font-semibold text-sm mt-2">

@@ -5,7 +5,14 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { useAppSelector } from "@/redux/store";
-import { User, ShoppingCart, Settings, Ticket, LogOut } from "lucide-react";
+import {
+  User,
+  ShoppingCart,
+  Settings,
+  CreditCard,
+  Ticket,
+  LogOut,
+} from "lucide-react";
 
 export default function Navbar() {
   const { data: session } = useSession();
@@ -94,7 +101,14 @@ export default function Navbar() {
                   >
                     <Ticket className="w-4 h-4 text-yellow-400" /> My Tickets
                   </Link>
-
+                  <Link
+                    href="/transactions"
+                    onClick={() => setOpen(false)}
+                    className="flex items-center gap-2 px-4 py-2 hover:bg-white/10 text-gray-200"
+                  >
+                    <CreditCard className="w-4 h-4 text-yellow-400" />{" "}
+                    Transactions
+                  </Link>
                   <Link
                     href="/settings"
                     onClick={() => setOpen(false)}
