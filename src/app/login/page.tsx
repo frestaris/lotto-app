@@ -15,6 +15,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   // ✅ Redirect if already logged in
   useEffect(() => {
@@ -31,6 +32,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setLoading(true);
 
     const res = await signIn("credentials", {
       redirect: false,
@@ -38,6 +40,8 @@ export default function LoginPage() {
       password,
       callbackUrl,
     });
+
+    setLoading(false);
 
     if (res?.error) {
       setError("Invalid email or password");
@@ -83,9 +87,16 @@ export default function LoginPage() {
         {/* Sign In button */}
         <button
           type="submit"
-          className="w-full sm:py-3 py-1 rounded-lg font-semibold text-[#0f172a] bg-gradient-to-r from-yellow-400 to-amber-500 hover:opacity-90 transition-all hover:cursor-pointer"
+          disabled={loading}
+          className="w-full sm:py-3 py-1 rounded-lg font-semibold text-[#0f172a] bg-gradient-to-r from-yellow-400 to-amber-500 hover:opacity-90 transition-all disabled:opacity-50 hover:cursor-pointer flex items-center justify-center gap-2"
         >
-          Sign In
+          {loading ? (
+            <>
+              <Spinner size="sm" /> Signing In...
+            </>
+          ) : (
+            "Sign In"
+          )}
         </button>
 
         {/* Divider */}

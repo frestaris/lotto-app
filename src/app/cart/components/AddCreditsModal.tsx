@@ -14,7 +14,7 @@ interface AddCreditsModalProps {
 
 export default function AddCreditsModal({ onClose }: AddCreditsModalProps) {
   const dispatch = useAppDispatch();
-  const { update } = useSession();
+  const { data: session, update } = useSession();
 
   const [amount, setAmount] = useState<number>(0);
   const [status, setStatus] = useState<
@@ -43,7 +43,10 @@ export default function AddCreditsModal({ onClose }: AddCreditsModalProps) {
 
       dispatch(updateCreditsSuccess(Math.round(amount * 100)));
 
-      await update({ trigger: "update" });
+      await update({
+        trigger: "update",
+        user: { id: session?.user?.id },
+      });
 
       setStatus("success");
       setMessage(`Successfully added $${amount.toFixed(2)} credits!`);

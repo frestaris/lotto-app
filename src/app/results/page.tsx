@@ -20,7 +20,7 @@ export default function ResultsPage() {
 
   if (loading) {
     return (
-      <div className="h-[calc(100vh-72px)] flex flex-col items-center justify-center bg-[#0a0a0a] text-gray-400">
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-72px)]">
         <Spinner
           variant="accent"
           size="lg"
@@ -32,7 +32,7 @@ export default function ResultsPage() {
 
   if (isError) {
     return (
-      <div className="h-[calc(100vh-72px)] flex items-center justify-center text-red-400 bg-[#0a0a0a]">
+      <div className="flex flex-col items-center justify-center py-20 text-red-400">
         Failed to load draws. Please try again later.
       </div>
     );
@@ -40,7 +40,7 @@ export default function ResultsPage() {
 
   if (!draws.length) {
     return (
-      <div className="h-[calc(100vh-72px)] flex items-center justify-center text-gray-400 bg-[#0a0a0a]">
+      <div className="flex flex-col items-center justify-center py-20 text-gray-400">
         No draws available yet.
       </div>
     );
@@ -48,15 +48,9 @@ export default function ResultsPage() {
 
   return (
     <div className="relative text-white bg-gradient-to-b from-[#0a0a0a] via-[#0f0f0f] to-[#1a1a1a] overflow-hidden">
-      {/* Background glow */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,215,0,0.12)_0%,rgba(0,0,0,1)_70%)] pointer-events-none" />
 
-      {/* HERO + GRID */}
-      <section
-        className="flex flex-col justify-center items-center text-center px-6 py-12 gap-10"
-        style={{ minHeight: "calc(100vh - 72px)" }}
-      >
-        {/* HERO HEADING */}
+      <section className="flex flex-col justify-center items-center text-center px-6 py-12 gap-10">
         <div className="z-10">
           <h1 className="text-5xl md:text-6xl font-extrabold mb-4 text-yellow-400 drop-shadow-[0_0_8px_rgba(255,215,0,0.6)]">
             Latest Results
@@ -66,7 +60,6 @@ export default function ResultsPage() {
           </p>
         </div>
 
-        {/* GRID */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-w-6xl w-full z-10">
           {draws.slice(0, 8).map((d) => {
             const formattedDate = formatDate(d.drawDate);

@@ -137,13 +137,15 @@ export default function GameResultsPage() {
           ))}
 
           {selectedDraw.winningSpecialNumbers.length > 0 && (
-            <span className="text-yellow-400 font-semibold px-3">+</span>
+            <div className="w-10 h-10 flex items-center justify-center font-bold text-yellow-400">
+              +
+            </div>
           )}
 
           {selectedDraw.winningSpecialNumbers.map((n, i) => (
             <div
               key={i}
-              className="w-10 h-10 rounded-full flex items-center justify-center bg-purple-500 text-white font-bold"
+              className="w-10 h-10 rounded-full flex items-center justify-center bg-orange-500 text-black font-bold"
             >
               {n}
             </div>
@@ -158,16 +160,26 @@ export default function GameResultsPage() {
       {/* 🧮 Division Prizes */}
       {game.prizeDivisions && (
         <div className="max-w-3xl mx-auto mt-8 border border-white/10 rounded-lg overflow-hidden">
-          <table className="w-full text-sm text-gray-300">
-            <thead className="bg-white/10 text-yellow-400 uppercase text-xs">
+          <table className="w-full text-xs sm:text-sm text-gray-300">
+            <thead className="bg-[#1a1a1a] text-yellow-400 uppercase text-xs sm:text-sm">
               <tr>
                 <th className="px-4 py-2 text-left">Division</th>
-                <th className="px-4 py-2 text-center">Match</th>
+
+                {/* Hide on small screens */}
+                <th className="px-4 py-2 text-center hidden sm:table-cell">
+                  Match
+                </th>
+
                 <th className="px-4 py-2 text-center">Prize Pool</th>
                 <th className="px-4 py-2 text-center">Winners</th>
-                <th className="px-4 py-2 text-center">Each</th>
+
+                {/* Hide on small screens */}
+                <th className="px-4 py-2 text-center hidden sm:table-cell">
+                  Each
+                </th>
               </tr>
             </thead>
+
             <tbody>
               {game.prizeDivisions.map((div, i) => {
                 const result =
@@ -190,18 +202,54 @@ export default function GameResultsPage() {
                     key={i}
                     className="border-t border-white/10 hover:bg-white/5 transition"
                   >
+                    {/* Division */}
                     <td className="px-4 py-2 font-semibold">{div.type}</td>
-                    <td className="px-4 py-2 text-center">
-                      {div.matchMain} main
-                      {div.matchSpecial ? ` + ${div.matchSpecial} special` : ""}
+
+                    {/* Match (hidden on small screens) */}
+                    <td className="px-4 py-2 text-center hidden sm:table-cell">
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="flex flex-wrap justify-start gap-[4px] max-w-[60px]">
+                          {Array.from({ length: div.matchMain }).map((_, i) => (
+                            <div
+                              key={`main-${i}`}
+                              className="w-3 h-3 rounded-full bg-yellow-400 shadow-[0_0_4px_rgba(255,215,0,0.4)]"
+                            />
+                          ))}
+                        </div>
+
+                        {(div.matchSpecial ?? 0) > 0 && (
+                          <span className="text-yellow-400 font-semibold">
+                            +
+                          </span>
+                        )}
+
+                        {(div.matchSpecial ?? 0) > 0 && (
+                          <div className="flex flex-wrap justify-start gap-[4px] max-w-[60px]">
+                            {Array.from({ length: div.matchSpecial ?? 0 }).map(
+                              (_, i) => (
+                                <div
+                                  key={`special-${i}`}
+                                  className="w-3 h-3 rounded-full bg-purple-500 shadow-[0_0_4px_rgba(168,85,247,0.4)]"
+                                />
+                              )
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </td>
+
+                    {/* Prize Pool */}
                     <td className="px-4 py-2 text-center text-green-400">
                       ${Math.round(pool / 100).toLocaleString()}
                     </td>
+
+                    {/* Winners */}
                     <td className="px-4 py-2 text-center text-yellow-400 font-semibold">
                       {winners}
                     </td>
-                    <td className="px-4 py-2 text-center text-blue-400">
+
+                    {/* Each (hidden on small screens) */}
+                    <td className="px-4 py-2 text-center text-blue-400 hidden sm:table-cell">
                       {each > 0 ? `$${(each / 100).toLocaleString()}` : "-"}
                     </td>
                   </tr>

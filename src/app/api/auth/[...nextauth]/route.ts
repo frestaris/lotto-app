@@ -69,13 +69,11 @@ export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
 
   callbacks: {
-    async jwt({ token, user, account, trigger }) {
-      // On first login
+    async jwt({ token, user, account, trigger, session }) {
+      // On login
       if (user) {
         token.user = user as AuthUser;
         token.user.provider = account?.provider || "credentials";
-
-        // Always sign an internal app token for API auth
         token.user.accessToken = jwt.sign(
           { userId: user.id, email: user.email },
           process.env.NEXTAUTH_SECRET!,
@@ -83,19 +81,29 @@ export const authOptions: NextAuthOptions = {
         );
       }
 
-      // Handle update trigger
-      if (trigger === "update" && token.user?.id) {
+      // On manual update trigger
+      if (trigger === "update" && session?.user?.id) {
         const dbUser = await prisma.user.findUnique({
-          where: { id: token.user.id },
-          select: {
-            creditCents: true,
-            name: true,
-            email: true,
-            image: true,
-          },
+          where: { id: session.user.id },
+          select: { creditCents: true, name: true, email: true, image: true },
         });
 
-        if (dbUser) {
+        if (dbUser && token.user) {
+          token.user.creditCents = dbUser.creditCents;
+          token.user.name = dbUser.name;
+          token.user.email = dbUser.email;
+          token.user.image = dbUser.image;
+        }
+      }
+
+      // 🧠 Always refresh DB values when token.user exists (page reloads)
+      if (token.user?.id) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.user.id },
+          select: { creditCents: true, name: true, email: true, image: true },
+        });
+
+        if (dbUser && token.user) {
           token.user.creditCents = dbUser.creditCents;
           token.user.name = dbUser.name;
           token.user.email = dbUser.email;
@@ -105,7 +113,6 @@ export const authOptions: NextAuthOptions = {
 
       return token;
     },
-
     async session({ session, token }) {
       if (token?.user) {
         session.user.id = token.user.id;

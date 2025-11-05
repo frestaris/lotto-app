@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import AuthLayout from "@/components/AuthLayout";
+import Spinner from "@/components/Spinner";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -94,9 +95,15 @@ export default function RegisterPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full sm:py-3 py-1 rounded-lg font-semibold text-[#0f172a] bg-gradient-to-r from-yellow-400 to-amber-500 hover:opacity-90 transition-all disabled:opacity-50 hover:cursor-pointer"
+          className="w-full sm:py-3 py-1 rounded-lg font-semibold text-[#0f172a] bg-gradient-to-r from-yellow-400 to-amber-500 hover:opacity-90 transition-all disabled:opacity-50 hover:cursor-pointer flex items-center justify-center gap-2"
         >
-          {loading ? "Creating..." : "Create Account"}
+          {loading ? (
+            <>
+              <Spinner size="sm" /> Creating...
+            </>
+          ) : (
+            "Create Account"
+          )}
         </button>
 
         <div className="flex items-center justify-center ">

@@ -1,6 +1,7 @@
 "use client";
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
 import { clearCart, removeTicket } from "@/redux/slices/cartSlice";
@@ -10,9 +11,11 @@ import AddCreditsModal from "./components/AddCreditsModal";
 import CartFooter from "./components/CartFooter";
 import TicketAccordion from "./components/TicketAccordion";
 import { setAccount } from "@/redux/slices/accountSlice";
+import Spinner from "@/components/Spinner";
 
 export default function CartPage() {
   const { data: session, status, update } = useSession();
+  const router = useRouter();
   const dispatch = useAppDispatch();
 
   const { tickets } = useAppSelector((s) => s.cart);
@@ -60,24 +63,24 @@ export default function CartPage() {
       dispatch(clearCart());
       dispatch(resetTicketState());
 
-      const newSession = await update({ trigger: "update" });
+      const newSession = await update({
+        trigger: "update",
+        user: { id: session.user.id },
+      });
       if (newSession?.user) {
         dispatch(setAccount(newSession.user));
       }
+      router.push("/tickets");
     }
   };
 
   if (status === "loading")
-    return (
-      <div className="min-h-[calc(100vh-65px)] flex items-center justify-center text-gray-400 bg-gradient-to-b from-[#0a0a0a] to-[#1c1c1c]">
-        Loading your cart...
-      </div>
-    );
+    return <Spinner variant="accent" size="lg" fullScreen />;
 
   if (!tickets.length)
     return (
       <div className="min-h-[calc(100vh-65px)] flex flex-col items-center justify-center text-gray-300 bg-gradient-to-b from-[#0a0a0a] to-[#1c1c1c] text-center px-4">
-        <p className="mb-6 text-lg">No tickets yet. Go play a game!</p>
+        <p className="mb-6 text-lg">There are no tickets in your cart.</p>
         <Link
           href="/"
           className="px-6 py-3 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 text-black font-semibold hover:opacity-90"
@@ -89,7 +92,7 @@ export default function CartPage() {
 
   return (
     <div className="min-h-[calc(100vh-65px)] bg-gradient-to-b from-[#0a0a0a] to-[#1c1c1c] text-white pb-40 px-6 overflow-y-auto">
-      <div className="max-w-4xl mx-auto pt-16">
+      <div className="max-w-4xl mx-auto sm:pt-16 pt-10">
         <CartHeader
           session={session}
           credits={credits}
