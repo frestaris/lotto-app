@@ -7,7 +7,7 @@ import { addTicket } from "@/redux/slices/cartSlice";
 import { v4 as uuidv4 } from "uuid";
 import type { Draw, Game } from "@/types/game";
 import ManualPicker from "./create-your-own/ManualPicker";
-import { Toaster } from "@/components/Toaster";
+import { toast } from "@/components/Toaster";
 import { generateNumbers } from "@/utils/generateNumbers";
 import { getNextDrawDates } from "@/utils/getNextDrawDates";
 
@@ -26,7 +26,6 @@ export default function PlayOptions({ game, selectedDraw }: PlayOptionsProps) {
   })();
 
   const dispatch = useAppDispatch();
-  const { showToast, Toast } = Toaster();
 
   // Packages for Quick Play
   const quickPlays = [
@@ -68,7 +67,7 @@ export default function PlayOptions({ game, selectedDraw }: PlayOptionsProps) {
         })
       );
     }
-    showToast(`${entries} entries added to your cart`);
+    toast(`${entries} entries added to your cart`);
   };
 
   return (
@@ -140,7 +139,6 @@ export default function PlayOptions({ game, selectedDraw }: PlayOptionsProps) {
           <ManualPicker game={game} selectedDraw={selectedDraw} />
         </div>
       )}
-      <Toast />
     </div>
   );
 }

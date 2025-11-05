@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { useSession } from "next-auth/react";
-import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useAppDispatch } from "@/redux/store";
 import { useUpdateAccountMutation } from "@/redux/api/accountApi";
 import { updateCreditsSuccess } from "@/redux/slices/accountSlice";
 import Modal from "@/components/Modal";
+import { toast } from "@/components/Toaster";
 
 interface AddCreditsModalProps {
   onClose: () => void;
@@ -17,23 +18,18 @@ export default function AddCreditsModal({ onClose }: AddCreditsModalProps) {
   const { data: session, update } = useSession();
 
   const [amount, setAmount] = useState<number>(0);
-  const [status, setStatus] = useState<
-    "idle" | "loading" | "success" | "error"
-  >("idle");
-  const [message, setMessage] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading">("idle");
   const [updateAccount] = useUpdateAccountMutation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (amount <= 0) {
-      setStatus("error");
-      setMessage("Please enter a valid amount greater than 0.");
+      toast("Please enter a valid amount greater than 0.", "error");
       return;
     }
 
     setStatus("loading");
-    setMessage("");
 
     try {
       await updateAccount({
@@ -48,14 +44,14 @@ export default function AddCreditsModal({ onClose }: AddCreditsModalProps) {
         user: { id: session?.user?.id },
       });
 
-      setStatus("success");
-      setMessage(`Successfully added $${amount.toFixed(2)} credits!`);
+      toast(`Successfully added $${amount.toFixed(2)} credits!`, "success");
       setAmount(0);
       onClose();
     } catch (err) {
-      console.error(err);
-      setStatus("error");
-      setMessage("Failed to add credits. Please try again.");
+      console.error("❌ Add credits failed:", err);
+      toast("Failed to add credits. Please try again.", "error");
+    } finally {
+      setStatus("idle");
     }
   };
 
@@ -90,23 +86,6 @@ export default function AddCreditsModal({ onClose }: AddCreditsModalProps) {
             "Add Credits"
           )}
         </button>
-
-        {status !== "idle" && (
-          <div className="flex items-center justify-center gap-2 mt-2 text-sm">
-            {status === "success" && (
-              <>
-                <CheckCircle2 className="text-green-400 w-4 h-4" />
-                <span className="text-green-400">{message}</span>
-              </>
-            )}
-            {status === "error" && (
-              <>
-                <AlertCircle className="text-red-400 w-4 h-4" />
-                <span className="text-red-400">{message}</span>
-              </>
-            )}
-          </div>
-        )}
       </form>
     </Modal>
   );

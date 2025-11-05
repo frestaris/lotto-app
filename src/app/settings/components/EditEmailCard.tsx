@@ -1,21 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Mail, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Mail } from "lucide-react";
 import GameCard from "@/components/GameCard";
 import Modal from "@/components/Modal";
 import { useUpdateAccountMutation } from "@/redux/api/accountApi";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
 import { setAccount, updateEmailSuccess } from "@/redux/slices/accountSlice";
 import { useSession } from "next-auth/react";
+import Spinner from "@/components/Spinner";
+import { toast } from "@/components/Toaster";
 
 export default function EditEmailCard() {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<
-    "idle" | "loading" | "success" | "error"
-  >("idle");
-  const [message, setMessage] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading">("idle");
 
   const { data: session, update: updateSession } = useSession();
   const account = useAppSelector((s) => s.account.account);
@@ -40,15 +39,13 @@ export default function EditEmailCard() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setStatus("loading");
-    setMessage("");
+
     if (isGoogleUser) {
-      setMessage(
-        "Google accounts cannot change email. Please update it in Google."
-      );
-      setStatus("error");
+      toast("Google accounts cannot change email.", "error");
       return;
     }
+
+    setStatus("loading");
 
     try {
       const res = await updateAccount({
@@ -58,7 +55,7 @@ export default function EditEmailCard() {
 
       const updatedEmail = res.user.email;
 
-      // ✅ Update Redux immediately
+      // ✅ Update Redux
       dispatch(updateEmailSuccess(updatedEmail));
 
       // ✅ Update NextAuth session
@@ -67,7 +64,7 @@ export default function EditEmailCard() {
         user: { ...session?.user, email: updatedEmail },
       });
 
-      // ✅ Keep Redux in sync with updated session
+      // ✅ Sync Redux again
       dispatch(
         setAccount({
           id: session?.user?.id,
@@ -78,24 +75,20 @@ export default function EditEmailCard() {
         })
       );
 
-      setStatus("success");
-      setMessage("Email updated successfully!");
+      toast("Email updated successfully!", "success"); // ✅ success toast
       setEmail("");
+      setOpen(false);
     } catch (err: unknown) {
-      if (
-        typeof err === "object" &&
-        err !== null &&
-        "status" in err &&
-        typeof (err as { status?: number }).status === "number" &&
-        (err as { status?: number }).status === 403
-      ) {
-        setStatus("error");
-        setMessage("Email change not allowed for Google accounts.");
-        return;
-      }
+      console.warn("Email change failed:", err);
 
-      setStatus("error");
-      setMessage("Something went wrong.");
+      const errorMessage =
+        (err as { data?: { error?: string; message?: string } })?.data?.error ||
+        (err as { message?: string })?.message ||
+        "Failed to update email. Please try again.";
+
+      toast(errorMessage, "error"); // ✅ error toast
+    } finally {
+      setStatus("idle");
     }
   };
 
@@ -139,35 +132,17 @@ export default function EditEmailCard() {
             className={`w-full py-2 rounded-lg font-semibold text-black transition ${
               status === "loading"
                 ? "bg-yellow-400/50 cursor-not-allowed"
-                : "bg-gradient-to-r from-yellow-400 to-amber-500 hover:opacity-90"
+                : "bg-gradient-to-r from-yellow-400 to-amber-500 hover:opacity-90 hover:cursor-pointer"
             }`}
           >
             {status === "loading" ? (
               <div className="flex items-center justify-center gap-2">
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Saving...
+                <Spinner size="sm" /> Saving...
               </div>
             ) : (
               "Save Changes"
             )}
           </button>
-
-          {status !== "idle" && (
-            <div className="flex items-center justify-center gap-2 mt-2 text-sm">
-              {status === "success" && (
-                <>
-                  <CheckCircle2 className="text-green-400 w-4 h-4" />
-                  <span className="text-green-400">{message}</span>
-                </>
-              )}
-              {status === "error" && (
-                <>
-                  <AlertCircle className="text-red-400 w-4 h-4" />
-                  <span className="text-red-400">{message}</span>
-                </>
-              )}
-            </div>
-          )}
         </form>
       </Modal>
     </>

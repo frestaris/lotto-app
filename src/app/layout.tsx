@@ -1,6 +1,7 @@
 import "./globals.css";
 import { Providers } from "./providers";
 import Navbar from "@/components/Navbar";
+import { GlobalToaster } from "@/components/Toaster";
 
 export const metadata = {
   title: "Lotto App",
@@ -18,6 +19,7 @@ export default function RootLayout({
         <Providers>
           <Navbar />
           {children}
+          <GlobalToaster />
         </Providers>
       </body>
     </html>

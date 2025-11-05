@@ -207,7 +207,7 @@ export default function GameResultsPage() {
 
                     {/* Match (hidden on small screens) */}
                     <td className="px-4 py-2 text-center hidden sm:table-cell">
-                      <div className="flex items-center justify-center gap-2">
+                      <div className="flex items-start gap-2">
                         <div className="flex flex-wrap justify-start gap-[4px] max-w-[60px]">
                           {Array.from({ length: div.matchMain }).map((_, i) => (
                             <div
