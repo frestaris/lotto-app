@@ -19,16 +19,17 @@ export default function TicketList({
 
   const grouped = useMemo(() => {
     return tickets.reduce<Record<string, UserTicket[]>>((acc, t) => {
-      const name = t.game.name;
-      if (!acc[name]) acc[name] = [];
-      acc[name].push(t);
+      const gameName = t.game.name;
+      const drawNumber = t.draw?.drawNumber ?? "Unknown";
+      const key = `${gameName}_${drawNumber}`;
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(t);
       return acc;
     }, {});
   }, [tickets]);
 
-  const gameNames = Object.keys(grouped);
+  const groupKeys = Object.keys(grouped);
 
-  // Show loading spinner (inside content area, not full page)
   if (loading) {
     return (
       <div className="py-20">
@@ -37,7 +38,6 @@ export default function TicketList({
     );
   }
 
-  // No tickets found
   if (tickets.length === 0) {
     return (
       <div className="text-center py-10">
@@ -52,23 +52,27 @@ export default function TicketList({
     );
   }
 
-  // Render grouped accordions
   return (
     <>
-      {gameNames.map((gameName) => (
-        <TicketAccordion
-          key={gameName}
-          gameName={gameName}
-          tickets={grouped[gameName]}
-          open={openGroups[gameName]}
-          toggleOpen={() =>
-            setOpenGroups((prev) => ({
-              ...prev,
-              [gameName]: !prev[gameName],
-            }))
-          }
-        />
-      ))}
+      {groupKeys.map((key) => {
+        const ticketsForGroup = grouped[key];
+        const gameName = ticketsForGroup[0]?.game.name ?? "Unknown Game";
+
+        return (
+          <TicketAccordion
+            key={key}
+            gameName={gameName}
+            tickets={ticketsForGroup}
+            open={openGroups[key]}
+            toggleOpen={() =>
+              setOpenGroups((prev) => ({
+                ...prev,
+                [key]: !prev[key],
+              }))
+            }
+          />
+        );
+      })}
     </>
   );
 }
