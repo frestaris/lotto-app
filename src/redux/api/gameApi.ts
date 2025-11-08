@@ -37,6 +37,12 @@ export const gameApi = baseApi.injectEndpoints({
       query: () => ({ url: "/draws/latest" }),
       providesTags: ["Draw"],
     }),
+    getCompletedDraws: builder.query<GameWithDraws, string>({
+      query: (slug) => ({
+        url: `/games/${slug}/completed`,
+        method: "GET",
+      }),
+    }),
 
     // 👤 User tickets
     getUserTickets: builder.query<
@@ -92,6 +98,7 @@ export const {
   useGetAllGamesQuery,
   useGetGameFullQuery,
   useGetLatestDrawsQuery,
+  useGetCompletedDrawsQuery,
   useGetUserTicketsQuery,
   useGetUserTicketsDetailedQuery,
   useCreateTicketMutation,

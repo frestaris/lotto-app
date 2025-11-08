@@ -23,15 +23,14 @@ export interface Game {
   currentJackpotCents?: number | null;
   baseJackpotCents?: number | null;
 
-  prizeDivisions?:
-    | {
-        matchMain: number;
-        matchSpecial?: number;
-        percentage?: number;
-        fixed?: number;
-        type: string;
-      }[]
-    | null;
+  prizeDivisions?: PrizeDivision[] | null;
+}
+export interface PrizeDivision {
+  matchMain: number;
+  matchSpecial?: number;
+  percentage?: number;
+  fixed?: number;
+  type: string;
 }
 
 /**

@@ -53,21 +53,14 @@ export default function GameHeader({
   );
 
   const isNextDraw = upcomingDraws[0]?.id === currentDraw?.id;
-  const jackpotAmount = currentDraw ? (
-    isNextDraw ? (
-      `$${(
-        (currentDraw.jackpotCents ??
-          game.jackpotCents ??
-          game.currentJackpotCents ??
-          game.baseJackpotCents ??
-          0) / 100
-      ).toLocaleString()}`
-    ) : (
-      "Announcing Soon"
-    )
-  ) : (
-    <Spinner size="sm" />
-  );
+  const jackpotCents = game.jackpotCents ?? 0;
+
+  const jackpotAmount =
+    isNextDraw && jackpotCents > 0
+      ? `$${(jackpotCents / 100).toLocaleString(undefined, {
+          maximumFractionDigits: 0,
+        })}`
+      : "Announcing Soon";
 
   const Icon =
     (Icons[game.iconName as keyof typeof Icons] as React.ElementType) ||
@@ -130,7 +123,7 @@ export default function GameHeader({
           <div className="bg-[#121212] text-white rounded-lg shadow-lg p-8 max-w-2xl w-full relative border border-white/10">
             <button
               onClick={() => setShowCalendar(false)}
-              className="absolute top-3 right-3 text-gray-400 hover:text-yellow-400"
+              className="absolute top-3 right-3 text-gray-400 hover:text-yellow-400 hover:cursor-pointer"
             >
               ✕
             </button>
@@ -161,13 +154,12 @@ export default function GameHeader({
                       </p>
                       <p className="text-yellow-400 text-sm">
                         Jackpot: $
-                        {(
-                          (d.jackpotCents ??
-                            game.jackpotCents ??
-                            game.currentJackpotCents ??
-                            game.baseJackpotCents ??
-                            0) / 100
-                        ).toLocaleString()}
+                        {((game.jackpotCents ?? 0) / 100).toLocaleString(
+                          undefined,
+                          {
+                            maximumFractionDigits: 0,
+                          }
+                        )}
                       </p>
                     </div>
                   </div>

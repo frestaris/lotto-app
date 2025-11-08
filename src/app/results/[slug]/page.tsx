@@ -5,10 +5,10 @@ import { useState, useEffect, useMemo } from "react";
 import * as Icons from "lucide-react";
 import {
   useGetTicketsByDrawIdQuery,
-  useGetGameFullQuery,
+  useGetCompletedDrawsQuery,
 } from "@/redux/api/gameApi";
 import { getGameColor } from "@/utils/getGameColor";
-import type { Draw } from "@/types/game";
+import type { Draw, PrizeDivision } from "@/types/game";
 import { formatDate } from "@/utils/formatDate";
 import Spinner from "@/components/Spinner";
 
@@ -21,7 +21,7 @@ export default function GameResultsPage() {
     isLoading: isGameLoading,
     isFetching: isGameFetching,
     isError: isGameError,
-  } = useGetGameFullQuery(slug);
+  } = useGetCompletedDrawsQuery(slug);
 
   const draws = useMemo(() => game?.draws ?? [], [game?.draws]);
 
@@ -42,22 +42,12 @@ export default function GameResultsPage() {
   // 🧩 Auto-select most recent completed or next upcoming draw
   useEffect(() => {
     if (draws.length) {
-      const sorted = [...draws].sort(
+      // Select the most recent completed draw automatically
+      const latest = [...draws].sort(
         (a, b) =>
-          new Date(a.drawDate).getTime() - new Date(b.drawDate).getTime()
-      );
-
-      const now = new Date();
-      const mostRecentCompleted =
-        sorted
-          .filter(
-            (d) => d.status === "COMPLETED" && new Date(d.drawDate) <= now
-          )
-          .at(-1) ||
-        sorted.find((d) => new Date(d.drawDate) >= now) ||
-        sorted[0];
-
-      setSelectedDraw(mostRecentCompleted);
+          new Date(b.drawDate).getTime() - new Date(a.drawDate).getTime()
+      )[0];
+      setSelectedDraw(latest);
     }
   }, [draws]);
 
@@ -181,7 +171,7 @@ export default function GameResultsPage() {
             </thead>
 
             <tbody>
-              {game.prizeDivisions.map((div, i) => {
+              {game.prizeDivisions.map((div: PrizeDivision, i) => {
                 const result =
                   divisionResults.find((r) => r.type === div.type) ?? null;
 
@@ -278,7 +268,6 @@ export default function GameResultsPage() {
           className="bg-black border border-white/10 rounded-md px-3 py-2 text-sm text-gray-300 hover:cursor-pointer"
         >
           {[...draws]
-            .filter((d) => d.status === "COMPLETED")
             .sort(
               (a, b) =>
                 new Date(b.drawDate).getTime() - new Date(a.drawDate).getTime()

@@ -15,16 +15,15 @@ export async function GET(
       include: {
         draws: {
           where: {
-            status: "UPCOMING",
-            drawDate: { gt: now },
+            status: "COMPLETED",
+            drawDate: { lte: now },
           },
-          orderBy: { drawDate: "asc" },
-          take: 6,
+          orderBy: { drawDate: "desc" },
+          take: 20,
           select: {
             id: true,
             drawNumber: true,
             drawDate: true,
-            status: true,
             jackpotCents: true,
             winningMainNumbers: true,
             winningSpecialNumbers: true,
@@ -39,29 +38,20 @@ export async function GET(
 
     const formatted = {
       ...game,
-      prizeDivisions:
-        typeof game.prizeDivisions === "string"
-          ? JSON.parse(game.prizeDivisions)
-          : game.prizeDivisions,
       draws: game.draws.map((d) => ({
         ...d,
         divisionResults:
           typeof d.divisionResults === "string"
             ? JSON.parse(d.divisionResults)
-            : d.divisionResults,
+            : d.divisionResults ?? [],
       })),
-      jackpotCents:
-        game.draws[0]?.jackpotCents ??
-        game.currentJackpotCents ??
-        game.baseJackpotCents ??
-        0,
     };
 
     return NextResponse.json(formatted, { status: 200 });
   } catch (error) {
-    console.error("❌ Error fetching game:", error);
+    console.error("❌ Error fetching completed draws:", error);
     return NextResponse.json(
-      { error: "Failed to fetch game" },
+      { error: "Failed to fetch completed draws" },
       { status: 500 }
     );
   }
