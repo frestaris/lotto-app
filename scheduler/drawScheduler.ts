@@ -217,18 +217,32 @@ async function runDueDrawsForGame(game: SchedulerGame) {
     const jackpotDivision = divisionResults.find((d) => d.type === "Jackpot");
     const jackpotWinners = jackpotDivision?.winnersCount ?? 0;
 
+    // 🎯 New jackpot calculation
     let nextJackpot = 0;
 
     if (jackpotWinners > 0) {
-      // Jackpot was hit → reset to base
+      // Jackpot was hit → reset to base amount
       nextJackpot = game.baseJackpotCents ?? 0;
     } else {
-      // Jackpot not hit → grow with sales, shrink with payouts
-      nextJackpot = Math.max(
-        prevJackpot + draw.totalSalesCents - totalPayoutCents,
-        0
-      );
+      // No jackpot winners → carry over
+      const sales = draw.totalSalesCents ?? 0;
+
+      if (sales === 0) {
+        // 🟡 No sales → add steady growth (+1000 cents)
+        nextJackpot = prevJackpot + 1000;
+      } else {
+        // 🟢 Add full sales amount when there are sales
+        nextJackpot = prevJackpot + sales;
+      }
     }
+
+    console.log(
+      `💰 Next jackpot for ${game.name}: $${(
+        nextJackpot / 100
+      ).toLocaleString()} (previous: $${(
+        prevJackpot / 100
+      ).toLocaleString()}, sales: ${draw.totalSalesCents ?? 0})`
+    );
 
     // 🧾 Update DB with next jackpot info
     await prisma.draw.update({
@@ -262,11 +276,13 @@ async function runDueDrawsForGame(game: SchedulerGame) {
         where: { id: game.id },
         data: { currentJackpotCents: nextJackpot },
       });
-    }
 
-    console.log(
-      `💰 Jackpot for next draw: $${(nextJackpot / 100).toLocaleString()}`
-    );
+      console.log(
+        `💰 Jackpot for next draw (${game.name}) set to $${(
+          nextJackpot / 100
+        ).toLocaleString()}`
+      );
+    }
   }
 }
 

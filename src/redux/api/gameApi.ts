@@ -78,7 +78,7 @@ export const gameApi = baseApi.injectEndpoints({
       query: (body) => ({
         url: "/tickets",
         method: "POST",
-        data: body,
+        body,
       }),
       invalidatesTags: ["Ticket"],
     }),

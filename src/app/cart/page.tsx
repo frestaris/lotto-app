@@ -12,6 +12,7 @@ import CartFooter from "./components/CartFooter";
 import TicketAccordion from "./components/TicketAccordion";
 import { setAccount } from "@/redux/slices/accountSlice";
 import Spinner from "@/components/Spinner";
+import { gameApi } from "@/redux/api/gameApi";
 
 export default function CartPage() {
   const { data: session, status, update } = useSession();
@@ -70,6 +71,8 @@ export default function CartPage() {
       if (newSession?.user) {
         dispatch(setAccount(newSession.user));
       }
+      dispatch(gameApi.util.invalidateTags(["Ticket"]));
+
       router.push("/tickets");
     }
   };
