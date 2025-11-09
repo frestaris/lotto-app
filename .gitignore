@@ -41,6 +41,6 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
-
+prisma/seed.ts
 # Scheduler node modules
 /scheduler/node_modules

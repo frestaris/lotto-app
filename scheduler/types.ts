@@ -4,6 +4,8 @@ export type SchedulerGame = {
   name: string;
   description?: string | null;
   iconName?: string | null;
+
+  // Ticket rules
   priceCents: number;
   mainPickCount: number;
   mainRangeMin: number;
@@ -11,13 +13,21 @@ export type SchedulerGame = {
   specialPickCount: number;
   specialRangeMin?: number | null;
   specialRangeMax?: number | null;
+
+  // Draw configuration
   drawFrequency?: string | null;
   jackpotCurrency?: string | null;
   isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+
+  // Jackpot settings
   currentJackpotCents?: number | null;
   baseJackpotCents?: number | null;
+
+  // Timestamps
+  createdAt: Date;
+  updatedAt: Date;
+
+  // Prize divisions structure
   prizeDivisions?:
     | {
         matchMain: number;
@@ -33,13 +43,13 @@ export type SchedulerDraw = {
   id: string;
   gameId: string;
   drawNumber: number;
-  drawDate: Date; // ✅ Prisma returns Date, not string
+  drawDate: Date;
   jackpotCents: number | null;
   status: "UPCOMING" | "COMPLETED";
   winningMainNumbers: number[];
   winningSpecialNumbers: number[];
-  createdAt: Date;
-  updatedAt: Date;
   totalSalesCents: number;
   winnersCount: number | null;
+  createdAt: Date;
+  updatedAt: Date;
 };

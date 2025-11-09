@@ -58,7 +58,7 @@ export default function TransactionList({ transactions }: Props) {
         : new Date(b.tx.createdAt).getTime();
     return bDate - aDate;
   });
-  console.log(transactions);
+
   return (
     <div className="divide-y divide-white/10 border border-white/10 rounded-xl bg-white/5 overflow-hidden">
       {allItems.map((item) => {
@@ -78,7 +78,7 @@ export default function TransactionList({ transactions }: Props) {
             (Icons[
               first.game?.iconName as keyof typeof Icons
             ] as React.ElementType) || Icons.Gamepad2;
-          console.log(transactions);
+
           return (
             <div
               key={`${first.game?.id}-${draw?.drawNumber ?? "none"}`}

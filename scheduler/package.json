@@ -1,9 +1,9 @@
 {
   "name": "lotto-draw-scheduler",
   "version": "1.0.0",
-  "type": "module",
+  "type": "commonjs",
   "scripts": {
-    "start": "ts-node --esm --project tsconfig.json drawScheduler.ts"
+    "start": "ts-node --project tsconfig.json index.ts"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
