@@ -38,11 +38,11 @@ export default function Navbar() {
   }, [open]);
 
   return (
-    <nav className="sticky top-0 z-50 bg-[#0a0a0a]/90 backdrop-blur-md border-b border-white/10">
+    <nav className="sticky top-0 z-50 bg-gradient-to-b from-[#161616] to-[#0a0a0a] border-b border-white/10">
       <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-3">
         <Link href="/" className="flex items-center gap-2">
           <Image
-            src="/images/logo.png"
+            src="/logo.png"
             alt="Lotto App"
             width={40}
             height={40}

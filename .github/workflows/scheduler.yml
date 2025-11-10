@@ -1,0 +1,28 @@
+name: Lotto Scheduler (Daily 8 PM Brisbane)
+
+on:
+  schedule:
+    - cron: "0 10 * * *" # 8:00 PM Brisbane (UTC+10)
+  workflow_dispatch:
+
+jobs:
+  run-scheduler:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run draw scheduler
+        run: npx ts-node scheduler/index.ts
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+          NODE_ENV: production
