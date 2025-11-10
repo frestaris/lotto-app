@@ -38,7 +38,7 @@ export default function HomePage() {
   return (
     <div className="relative text-white bg-gradient-to-b from-[#0a0a0a] via-[#0f0f0f] to-[#1a1a1a] overflow-hidden">
       <section
-        className="flex flex-col justify-between items-center text-center px-6 py-12 gap-10"
+        className="flex flex-col justify-evenly items-center text-center px-6 py-12 gap-10"
         style={{ minHeight: "calc(100vh - 72px)" }}
       >
         {/* Background glow */}
