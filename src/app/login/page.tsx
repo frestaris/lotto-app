@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import { Suspense, useState, useEffect } from "react";
 import { signIn, useSession } from "next-auth/react";
@@ -17,17 +18,12 @@ function LoginContent() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // ✅ Redirect if already logged in
   useEffect(() => {
-    if (status === "authenticated") {
-      router.replace(callbackUrl);
-    }
+    if (status === "authenticated") router.replace(callbackUrl);
   }, [status, callbackUrl, router]);
 
-  // ✅ Show spinner while loading session
-  if (status === "loading") {
+  if (status === "loading")
     return <Spinner variant="accent" size="lg" fullScreen />;
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,12 +38,8 @@ function LoginContent() {
     });
 
     setLoading(false);
-
-    if (res?.error) {
-      setError("Invalid email or password");
-    } else {
-      router.push(callbackUrl);
-    }
+    if (res?.error) setError("Invalid email or password");
+    else router.push(callbackUrl);
   };
 
   return (
@@ -56,7 +48,6 @@ function LoginContent() {
       subtitle="Sign in to continue your lucky journey!"
     >
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Email */}
         <div>
           <label className="text-sm text-gray-200 mb-1 block">Email</label>
           <input
@@ -69,7 +60,6 @@ function LoginContent() {
           />
         </div>
 
-        {/* Password */}
         <div>
           <label className="text-sm text-gray-200 mb-1 block">Password</label>
           <input
@@ -84,7 +74,6 @@ function LoginContent() {
 
         {error && <p className="text-red-300 text-sm text-center">{error}</p>}
 
-        {/* Sign In button */}
         <button
           type="submit"
           disabled={loading}
@@ -99,7 +88,6 @@ function LoginContent() {
           )}
         </button>
 
-        {/* Divider */}
         <div className="flex items-center justify-center ">
           <span className="flex items-center w-full max-w-xs">
             <span className="flex-grow border-t border-white/20"></span>
@@ -110,7 +98,6 @@ function LoginContent() {
           </span>
         </div>
 
-        {/* Google Sign-In */}
         <button
           type="button"
           onClick={() => signIn("google", { callbackUrl })}
