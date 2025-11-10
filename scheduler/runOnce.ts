@@ -1,8 +1,8 @@
 import { PrismaClient } from "@prisma/client";
-import { SchedulerGame } from "../scheduler/types";
-import { runDueDrawsForGame } from "../scheduler/runDueDrawsForGame";
-import { getNextDrawDate } from "../scheduler/getNextDrawDate";
-import { ensureNextDrawExists } from "../scheduler/ensureNextDrawExits";
+import { SchedulerGame } from "./types";
+import { runDueDrawsForGame } from "./runDueDrawsForGame";
+import { getNextDrawDate } from "./getNextDrawDate";
+import { ensureNextDrawExists } from "./ensureNextDrawExits";
 const prisma = new PrismaClient();
 
 async function runOnce() {
