@@ -1,13 +1,12 @@
 "use client";
-export const dynamic = "force-dynamic";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import AuthLayout from "@/components/AuthLayout";
 import Spinner from "@/components/Spinner";
 
-export default function LoginPage() {
+function LoginContent() {
   const { status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -136,5 +135,13 @@ export default function LoginPage() {
         </a>
       </p>
     </AuthLayout>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<Spinner variant="accent" size="lg" fullScreen />}>
+      <LoginContent />
+    </Suspense>
   );
 }
