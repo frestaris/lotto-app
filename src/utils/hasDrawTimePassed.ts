@@ -4,7 +4,7 @@
  */
 
 export type DrawFrequency =
-  | "Daily 9 PM"
+  | "Daily 8 PM"
   | "Thursday 8 PM"
   | "Saturday 8 PM"
   | "Tuesday 8 PM"
@@ -16,15 +16,16 @@ export function hasDrawTimePassed(
 ): boolean {
   const now = new Date();
 
-  // If frequency missing, just compare by date
   if (!frequency) return drawDate < now;
 
   const parts = frequency.split(" ");
-  const timePart = parts.pop() ?? ""; // e.g. "8 PM"
+  const timePart = parts.pop() ?? "";
   const [time, ampm] = timePart.split(" ");
   let [hour, minute] = time.split(":").map(Number);
   minute = minute || 0;
 
+  // 🔹 Default to 8 PM if parsing fails
+  if (isNaN(hour)) hour = 8;
   if (ampm?.toUpperCase() === "PM" && hour < 12) hour += 12;
   if (ampm?.toUpperCase() === "AM" && hour === 12) hour = 0;
 

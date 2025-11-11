@@ -4,7 +4,7 @@ import Navbar from "@/components/Navbar";
 import { GlobalToaster } from "@/components/Toaster";
 
 export const metadata = {
-  title: "Lotto App",
+  title: "Lotto",
   icons: "/logo.png",
   description: "Your lucky draw platform",
 };
