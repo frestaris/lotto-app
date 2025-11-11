@@ -246,6 +246,7 @@ If there are no winners in a division, the **jackpot rolls over** and grows prop
 ### 💼 Wallet & Transactions
 
 - Add credits via **Add Credits modal**
+- Secure top-ups powered by **Stripe Checkout** — users can safely add credits using card payments
 - Wallet updates instantly after each purchase or payout
 - Transaction history available under “Transactions”
 

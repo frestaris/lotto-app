@@ -1,13 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useSession } from "next-auth/react";
 import { Coins, Loader2 } from "lucide-react";
 import GameCard from "@/components/GameCard";
 import Modal from "@/components/Modal";
-import { useUpdateAccountMutation } from "@/redux/api/accountApi";
-import { useAppDispatch, useAppSelector } from "@/redux/store";
-import { updateCreditsSuccess } from "@/redux/slices/accountSlice";
+import { useAppSelector } from "@/redux/store";
 import { toast } from "@/components/Toaster";
 
 interface AddCreditsCardProps {
@@ -15,17 +12,12 @@ interface AddCreditsCardProps {
 }
 
 export default function AddCreditsCard({ credits }: AddCreditsCardProps) {
-  const { update } = useSession();
-  const dispatch = useAppDispatch();
   const account = useAppSelector((s) => s.account.account);
-
   const currentCredits = credits ?? account?.creditCents ?? 0;
 
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState<number>(0);
   const [status, setStatus] = useState<"idle" | "loading">("idle");
-
-  const [updateAccount] = useUpdateAccountMutation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,24 +28,27 @@ export default function AddCreditsCard({ credits }: AddCreditsCardProps) {
     }
 
     setStatus("loading");
-
     try {
-      await updateAccount({
-        action: "addCredits",
-        addCredits: amount,
-      }).unwrap();
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount,
+          returnUrl: window.location.href,
+        }),
+      });
 
-      dispatch(updateCreditsSuccess(Math.round(amount * 100)));
+      const data = await res.json();
 
-      await update({ trigger: "update" });
-
-      toast(`Successfully added $${amount.toFixed(2)} credits!`, "success");
-      setAmount(0);
-      setOpen(false);
-    } catch (err: unknown) {
-      console.error("Failed to add credits:", err);
-      toast("Failed to add credits. Please try again.", "error");
-    } finally {
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        toast("Unable to start payment. Please try again.", "error");
+        setStatus("idle");
+      }
+    } catch (err) {
+      console.error("❌ Stripe session error:", err);
+      toast("Payment setup failed. Please try again.", "error");
       setStatus("idle");
     }
   };
@@ -100,10 +95,13 @@ export default function AddCreditsCard({ credits }: AddCreditsCardProps) {
             {status === "loading" ? (
               <div className="flex items-center justify-center gap-2">
                 <Loader2 className="w-5 h-5 animate-spin" />
-                Adding...
+                Redirecting...
               </div>
             ) : (
-              "Add Credits"
+              <div className="flex items-center justify-center gap-2">
+                <Coins className="w-5 h-5" />
+                <span>Top Up</span>
+              </div>
             )}
           </button>
         </form>

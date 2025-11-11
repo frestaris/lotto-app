@@ -1,11 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useSession } from "next-auth/react";
-import { Loader2 } from "lucide-react";
-import { useAppDispatch } from "@/redux/store";
-import { useUpdateAccountMutation } from "@/redux/api/accountApi";
-import { updateCreditsSuccess } from "@/redux/slices/accountSlice";
+import { Loader2, Coins } from "lucide-react";
 import Modal from "@/components/Modal";
 import { toast } from "@/components/Toaster";
 
@@ -14,12 +10,8 @@ interface AddCreditsModalProps {
 }
 
 export default function AddCreditsModal({ onClose }: AddCreditsModalProps) {
-  const dispatch = useAppDispatch();
-  const { data: session, update } = useSession();
-
   const [amount, setAmount] = useState<number>(0);
   const [status, setStatus] = useState<"idle" | "loading">("idle");
-  const [updateAccount] = useUpdateAccountMutation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,25 +24,26 @@ export default function AddCreditsModal({ onClose }: AddCreditsModalProps) {
     setStatus("loading");
 
     try {
-      await updateAccount({
-        action: "addCredits",
-        addCredits: amount,
-      }).unwrap();
-
-      dispatch(updateCreditsSuccess(Math.round(amount * 100)));
-
-      await update({
-        trigger: "update",
-        user: { id: session?.user?.id },
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount,
+          returnUrl: window.location.href,
+        }),
       });
 
-      toast(`Successfully added $${amount.toFixed(2)} credits!`, "success");
-      setAmount(0);
-      onClose();
+      const data = await res.json();
+
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        toast("Unable to start payment. Please try again.", "error");
+        setStatus("idle");
+      }
     } catch (err) {
-      console.error("❌ Add credits failed:", err);
-      toast("Failed to add credits. Please try again.", "error");
-    } finally {
+      console.error("❌ Stripe session error:", err);
+      toast("Payment setup failed. Please try again.", "error");
       setStatus("idle");
     }
   };
@@ -80,10 +73,14 @@ export default function AddCreditsModal({ onClose }: AddCreditsModalProps) {
         >
           {status === "loading" ? (
             <div className="flex items-center justify-center gap-2">
-              <Loader2 className="w-5 h-5 animate-spin" /> Adding...
+              <Loader2 className="w-5 h-5 animate-spin" />
+              Redirecting...
             </div>
           ) : (
-            "Add Credits"
+            <div className="flex items-center justify-center gap-2">
+              <Coins className="w-5 h-5" />
+              <span>Top Up</span>
+            </div>
           )}
         </button>
       </form>
