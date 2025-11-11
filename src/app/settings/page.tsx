@@ -24,7 +24,7 @@ export default function SettingsPage() {
 
   if (status === "loading") {
     return (
-      <div className="min-h-[calc(100vh-65px)] bg-gradient-to-b from-[#0a0a0a] to-[#1c1c1c] flex flex-col items-center justify-center px-4 sm:px-6">
+      <div className="min-h-[calc(100vh-65px)] bg-gradient-to-b from-[#0a0a0a] to-[#1c1c1c] flex flex-col justify-evenly items-center text-center px-4 sm:px-6">
         <div className="max-w-5xl w-full space-y-10">
           {/* Header skeletons */}
           <div className="text-center space-y-3">
