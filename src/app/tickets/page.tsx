@@ -60,7 +60,9 @@ export default function MyTicketsPage() {
   // Main UI
   return (
     <div className="max-w-4xl mx-auto py-10 text-white">
-      <h1 className="text-3xl font-bold mb-8 text-yellow-400">My Tickets</h1>
+      <h1 className="text-3xl font-bold mb-8 text-yellow-400 ml-2">
+        My Tickets
+      </h1>
 
       <MonthSelector
         months={months}
@@ -68,7 +70,7 @@ export default function MyTicketsPage() {
         onSelect={setSelectedMonth}
       />
 
-      <h2 className="text-lg text-gray-300 font-semibold mb-4">
+      <h2 className="text-lg text-gray-300 font-semibold mb-4 ml-2">
         Showing draws in{" "}
         <span className="text-yellow-400">{activeMonth || "…"}</span>
       </h2>
