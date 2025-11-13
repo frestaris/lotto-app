@@ -1,9 +1,17 @@
-import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
-const prisma = new PrismaClient();
+
+interface IncomingTicket {
+  gameId: string;
+  numbers: number[];
+  specialNumbers: number[];
+  priceCents: number;
+}
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -23,83 +31,124 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json();
-  const { gameId, numbers, specialNumbers, priceCents } = body;
+
+  let tickets: IncomingTicket[] = [];
+
+  if (Array.isArray(body)) tickets = body;
+  else if (Array.isArray(body.tickets)) tickets = body.tickets;
+  else tickets = [body];
+
+  if (tickets.length === 0) {
+    return NextResponse.json({ error: "No tickets provided" }, { status: 400 });
+  }
+
+  const totalPriceCents = tickets.reduce(
+    (sum, t) => sum + (t.priceCents ?? 0),
+    0
+  );
+
+  if (user.creditCents < totalPriceCents) {
+    return NextResponse.json(
+      {
+        error: "Insufficient credits",
+        currentBalance: user.creditCents,
+        required: totalPriceCents,
+      },
+      { status: 400 }
+    );
+  }
+
+  // ===============================
+  // Fetch upcoming draws for games
+  // ===============================
+  const gameIds = [...new Set(tickets.map((t) => t.gameId))];
+  const now = new Date();
+
+  const upcomingDraws = await prisma.draw.findMany({
+    where: { gameId: { in: gameIds }, drawDate: { gt: now } },
+    orderBy: { drawDate: "asc" },
+  });
+
+  const drawMap = new Map<string, (typeof upcomingDraws)[number]>();
+
+  for (const d of upcomingDraws) {
+    if (!drawMap.has(d.gameId)) drawMap.set(d.gameId, d);
+  }
+
+  for (const t of tickets) {
+    if (!drawMap.get(t.gameId)) {
+      return NextResponse.json(
+        { error: `No upcoming draw available for game ${t.gameId}` },
+        { status: 400 }
+      );
+    }
+  }
 
   try {
-    if (user.creditCents < priceCents) {
-      return NextResponse.json(
-        {
-          error: "Insufficient credits. Please add more to continue.",
-          currentBalance: user.creditCents,
-          required: priceCents,
-        },
-        { status: 400 }
-      );
-    }
-
-    const now = new Date();
-    const upcomingDraw = await prisma.draw.findFirst({
-      where: { gameId, drawDate: { gt: now } },
-      orderBy: { drawDate: "asc" },
-    });
-
-    if (!upcomingDraw) {
-      return NextResponse.json(
-        { error: "No upcoming draw available for this game" },
-        { status: 400 }
-      );
-    }
-
-    const game = await prisma.game.findUnique({
-      where: { id: gameId },
-      select: { id: true, name: true, priceCents: true },
-    });
-
-    if (!game) {
-      return NextResponse.json({ error: "Game not found" }, { status: 404 });
-    }
-
     const result = await prisma.$transaction(async (tx) => {
+      // 1. Deduct credits once
       const updatedUser = await tx.user.update({
-        where: { id: user.id },
-        data: {
-          creditCents: { decrement: priceCents },
-          transactions: {
-            create: {
-              type: "TICKET_PURCHASE",
-              gameId: game.id,
-              drawId: upcomingDraw.id,
-              amountCents: priceCents,
-              description: `Ticket purchase for ${game.name}`,
-              reference: upcomingDraw.id,
-            },
-          },
-        },
+        where: { id: userId },
+        data: { creditCents: { decrement: totalPriceCents } },
       });
 
-      const ticket = await tx.ticket.create({
-        data: {
-          userId: user.id,
-          gameId: game.id,
-          drawId: upcomingDraw.id,
-          numbers,
-          specialNumbers,
-          priceCents,
-        },
+      // 2. Build ticket batch
+      const ticketData = tickets.map((t) => ({
+        userId,
+        gameId: t.gameId,
+        drawId: drawMap.get(t.gameId)!.id,
+        numbers: t.numbers,
+        specialNumbers: t.specialNumbers,
+        priceCents: t.priceCents,
+      }));
+
+      await tx.ticket.createMany({ data: ticketData });
+
+      // Re-fetch created tickets because createMany doesn't return them
+      const createdTickets = await tx.ticket.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+        take: ticketData.length,
       });
 
-      await tx.draw.update({
-        where: { id: upcomingDraw.id },
-        data: { totalSalesCents: { increment: priceCents } },
-      });
+      // 3. Build wallet transaction batch
+      const walletData = ticketData.map((t) => ({
+        userId,
+        type: "TICKET_PURCHASE",
+        gameId: t.gameId,
+        drawId: t.drawId,
+        amountCents: t.priceCents,
+        description: `Ticket purchase for game ${t.gameId}`,
+        reference: t.drawId,
+      }));
 
-      return { ticket, updatedUser };
+      await tx.walletTransaction.createMany({ data: walletData });
+
+      // 4. Aggregate draw updates
+      const salesByDraw: Record<string, number> = {};
+
+      for (const t of tickets) {
+        const drawId = drawMap.get(t.gameId)!.id;
+        salesByDraw[drawId] = (salesByDraw[drawId] ?? 0) + t.priceCents;
+      }
+
+      for (const [drawId, total] of Object.entries(salesByDraw)) {
+        await tx.draw.update({
+          where: { id: drawId },
+          data: { totalSalesCents: { increment: total } },
+        });
+      }
+
+      return { updatedUser, createdTickets };
     });
 
     return NextResponse.json(
       {
-        message: "Ticket purchased successfully",
-        ticket: result.ticket,
+        message:
+          tickets.length === 1
+            ? "Ticket purchased successfully"
+            : `${tickets.length} tickets purchased successfully`,
+        tickets: result.createdTickets,
         updatedBalance: result.updatedUser.creditCents,
       },
       { status: 201 }
@@ -107,7 +156,7 @@ export async function POST(req: Request) {
   } catch (err) {
     console.error("❌ Ticket creation failed:", err);
     return NextResponse.json(
-      { error: "Failed to create ticket" },
+      { error: "Failed to create tickets" },
       { status: 500 }
     );
   }

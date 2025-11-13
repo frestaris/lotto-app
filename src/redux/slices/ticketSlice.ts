@@ -23,7 +23,7 @@ export interface ApiTicket {
 
 interface TicketResponse {
   message: string;
-  ticket: ApiTicket;
+  tickets: ApiTicket[];
   updatedBalance: number;
 }
 
@@ -47,26 +47,13 @@ export const submitTickets = createAsyncThunk<
   { state: RootState; rejectValue: string }
 >("tickets/submitTickets", async (tickets, { dispatch, rejectWithValue }) => {
   try {
-    let lastResponse: TicketResponse | null = null;
-
-    for (const t of tickets) {
-      const res = await api.post<TicketResponse>("/tickets", t);
-      lastResponse = res.data;
-    }
-
-    if (!lastResponse) throw new Error("No response from server");
+    const res = await api.post<TicketResponse>("/tickets", tickets);
 
     dispatch(accountApi.util.invalidateTags(["Transaction"]));
 
-    return lastResponse;
-  } catch (error) {
-    if (error instanceof Error) {
-      return rejectWithValue(error.message);
-    }
-
-    return rejectWithValue(
-      "An unknown error occurred while submitting tickets"
-    );
+    return res.data;
+  } catch (error: unknown) {
+    return rejectWithValue((error as Error).message || "Something went wrong");
   }
 });
 
